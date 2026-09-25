@@ -1073,6 +1073,153 @@ function findLeaks() {
 }
 
 /* =========================================================================
+   HF SOLUTIONS — E3b: KITCHEN + CUSTOMER SCREEN
+   =========================================================================
+   MUTALBA: dono screenein sirf aapas mein juRi hon. Order confirm ho kar
+   kitchen par jaye, kitchen "ready" kare, customer screen number dikhaye —
+   aur software ke kisi hisse par asar andaz na ho.
+
+   AGAR YEH GHALAT KIYA JAYE: kitchen ki haalat order ke record ke ANDAR
+   rakh di jaye (order.kitchenStatus). Phir kisi din koi report likhne wala
+   "sirf ready wale orders ginte hain" likh dega, ya sync mein order.status
+   badal jayega — aur sale ka hisaab kitchen ke button se hilne lagega.
+
+   IS FILE KA TAREEQA: kitchen ka data order ke andar hai hi nahi.
+   Bilkul alag jagah (kitchenQueue), alag key, alag numbering.
+   Order ka record confirm hone ke baad seal hai — kitchen usay
+   parhti bhi nahi, sirf id le kar rakhti hai.
+
+   ISI LIYE: kitchen module band kar do, poora kitchenQueue mita do —
+   sale, ledger, P&L, receivable mein ek rupay ka farq nahi aayega.
+   ========================================================================= */
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HISSA 1 — ALAG JAGAH
+   Order ka record: paisa, grahak, khaate. Seal.
+   Ticket: sirf pakane ke liye. Paisa is mein hai hi nahi.
+   ───────────────────────────────────────────────────────────────────────── */
+
+const KQ = {
+  tickets: [],      // { id, orderId, token, lines[], status, at }
+  nextToken: 1,
+  // Token order ke number se alag hai. Roz 1 se shuru.
+  // Warna kal ko koi order number aur token ko ek samajh lega.
+  tokenDay: null
+};
+
+const TICKET_STATUS = ['new', 'cooking', 'ready', 'called', 'cleared'];
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HISSA 2 — CONFIRM PAR TICKET
+   Yeh WAHID raasta hai jahan order aur kitchen milte hain — aur yahan
+   bhi sirf id aur khane ke naam jate hain. Qeemat nahi.
+   ───────────────────────────────────────────────────────────────────────── */
+
+function makeTicket(order) {
+  if (!hasModule(UI, 'kitchenDisplay')) return null;   // module off = kuch nahi
+
+  const today = localToday();
+  if (KQ.tokenDay !== today) { KQ.tokenDay = today; KQ.nextToken = 1; }
+
+  const ticket = {
+    id:      'T' + today + '-' + KQ.nextToken,
+    orderId: order.id,              // sirf hawala. Order ko chhoota nahi.
+    token:   KQ.nextToken++,
+    orderType: order.orderType,     // Dine-in / Delivery — pakane wale ko pata ho
+    lines: (order.items || []).map(i => ({
+      name: i.name,
+      qty:  i.qty
+      // QEEMAT YAHAN NAHI. Kitchen ko paise se koi kaam nahi.
+      // Is ki ghair-maujoodgi hi zamanat hai ke hisaab nahi hil sakta.
+    })),
+    status: 'new',
+    at:     new Date().toISOString()
+  };
+
+  KQ.tickets.push(ticket);
+  return ticket;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HISSA 3 — KITCHEN SCREEN
+   Sirf KQ parhti aur likhti hai. Kisi aur cheez ko haath nahi lagati.
+   ───────────────────────────────────────────────────────────────────────── */
+
+function kitchenBoard() {
+  return KQ.tickets
+    .filter(t => t.status !== 'cleared')
+    .sort((a, b) => a.token - b.token);
+}
+
+function setTicketStatus(ticketId, status) {
+  if (!TICKET_STATUS.includes(status))
+    throw new Error('Ticket ki haalat ghalat: ' + status);
+
+  const t_ = KQ.tickets.find(x => x.id === ticketId);
+  if (!t_) return null;
+
+  t_.status = status;
+  t_.at = new Date().toISOString();
+
+  // Yahan order ko chhune ka koi code NAHI hai — aur na kabhi aana chahiye.
+  return t_;
+}
+
+function markReady(ticketId)  { return setTicketStatus(ticketId, 'ready'); }
+function markCalled(ticketId) { return setTicketStatus(ticketId, 'called'); }
+function clearTicket(ticketId){ return setTicketStatus(ticketId, 'cleared'); }
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HISSA 4 — CUSTOMER SCREEN
+   Sirf PARHTI hai. Koi button nahi, koi tabdeeli nahi.
+   ───────────────────────────────────────────────────────────────────────── */
+
+function customerBoard() {
+  return {
+    ready:   KQ.tickets.filter(t => t.status === 'ready').map(t => t.token).sort((a,b)=>a-b),
+    cooking: KQ.tickets.filter(t => t.status === 'new' || t.status === 'cooking')
+                       .map(t => t.token).sort((a,b)=>a-b)
+  };
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HISSA 5 — ROZ KA SAFAYA
+   Din khatam, queue khali. Order ka record haath bhi nahi lagta.
+   ───────────────────────────────────────────────────────────────────────── */
+
+function resetKitchenQueue() {
+  KQ.tickets = [];
+  KQ.nextToken = 1;
+  KQ.tokenDay = null;
+  // Sale, ledger, P&L — kisi par asar nahi.
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HISSA 6 — SABOOT
+   Yeh sirf dawa nahi — jaanch. Development mein chalayein.
+   ───────────────────────────────────────────────────────────────────────── */
+
+function proveKitchenIsolation(order) {
+  const before = JSON.stringify(order);
+
+  const tk = makeTicket(order);
+  if (tk) { markReady(tk.id); markCalled(tk.id); clearTicket(tk.id); }
+  resetKitchenQueue();
+
+  const after = JSON.stringify(order);
+  return {
+    orderBadla: before !== after,
+    ticketMeinQeemat: tk ? JSON.stringify(tk).includes('price') : false
+  };
+}
+
+/* =========================================================================
    HF SOLUTIONS — E3c: ROLES, DEVICES, AUR ORDER NUMBER
    =========================================================================
    BUNYADI FAISLA:
@@ -1515,6 +1662,146 @@ function proveCoreUntouched(coreId, mutateFn) {
   try { mutateFn(); } catch (e) { /* imtehaan jaari rahe */ }
   const after = JSON.stringify(corePrintFor(coreId));
   return { coreBadla: before !== after };
+}
+
+/* =========================================================================
+   HF SOLUTIONS — E4b: GST AUR UDHAAR KA LEDGER
+   =========================================================================
+   MASLA: ek hi restaurant mein kuch logon ke udhaar par GST lagta hai,
+   kuch par nahi (dost, purana grahak, chhoot wala). Aur kabhi GST band
+   bhi kar diya jata hai.
+
+   AGAR YEH GHALAT KIYA JAYE: bill ke waqt tax ka hisaab na rakha jaye aur
+   ledger dikhate waqt "GST chaalu hai? to 16% jorh do" likha ho. Phir jis
+   din GST band kiya, us din grahak ka 1,160 ka udhaar 1,000 ka dikhne
+   lagega. Purani entry chalti-firti badal jayegi.
+
+   IS FILE KA USOOL: tax order par JAM jata hai (freeze at posting).
+   Order mein likha rehta hai ke us waqt kitna tax laga — rate bhi, raqam
+   bhi. Ledger hamesha wahi parhta hai jo likha tha. GST band karo, grahak
+   ko chhoot do, rate badlo — purani entry ka ek paisa nahi hilta.
+
+   Chhoot GRAHAK ki setting hai (client ka data), Core ka hissa nahi.
+   ========================================================================= */
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HISSA 1 — IS ORDER PAR TAX LAGEGA YA NAHI
+   Faisla sirf order banate waqt hota hai. Uske baad kabhi nahi.
+   ───────────────────────────────────────────────────────────────────────── */
+
+function taxForOrder(ui, client, customer, payMode) {
+  // Module hi band hai
+  if (!ui.modules.includes('gst')) return { rate:0, label:null, reason:'module-off' };
+
+  // Grahak ko chhoot hai — dost, purana grahak, jo bhi wajah
+  if (customer && customer.taxExempt) return { rate:0, label:null, reason:'customer-exempt' };
+
+  const rates = (client.taxRates) || {};
+  const rate  = Number(rates[payMode || 'cash'] ?? rates.cash ?? 0);
+  return { rate: rate, label: client.taxLabel || 'GST', reason:'normal' };
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HISSA 2 — ORDER BANANA
+   Yahan tax jam jata hai. `tax` ka block order ke andar likha jata hai
+   aur phir kabhi dobara nahi ginta.
+   ───────────────────────────────────────────────────────────────────────── */
+
+function buildOrder(ui, client, session, { orderType, customer, items, received, payMode }) {
+  gateEntity('orders');
+
+  const sub = (items || []).reduce((s,i) => s + (Number(i.price)||0) * (Number(i.qty)||0), 0);
+  const tx  = taxForOrder(ui, client, customer, payMode);
+  const taxAmount = Math.round(sub * tx.rate) / 100;
+  const bill = sub + taxAmount;
+
+  // Udhaar ka usool — E2 se, ek hi jagah
+  const got = (received == null) ? bill : Number(received);
+  if (got < bill && !creditAllowed(ui, orderType, customer))
+    throw new Error('Is grahak ko udhaar nahi diya ja sakta');
+  if (got < bill && !canPartPay(ui, customer))
+    throw new Error('Adhoori adaigi sirf naam wale grahak ko');
+  if (got > bill) throw new Error('Wasool bill se zyada nahi ho sakta');
+
+  return {
+    id: nextOrderId(client, session),
+    at: new Date().toISOString(),
+    orderType,
+    customer: customer ? { name: customer.name } : null,
+    items: (items||[]).map(i => ({ name:i.name, qty:Number(i.qty)||0, price:Number(i.price)||0 })),
+
+    subtotal: sub,
+
+    // JAM GAYA — yeh block baad mein kabhi nahi badalta
+    tax: { rate: tx.rate, amount: taxAmount, label: tx.label, reason: tx.reason },
+
+    bill,
+    received: got,
+    postedBy: session.role,
+    coreVersion: ui.coreVersion
+  };
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HISSA 3 — LEDGER
+   Sirf order mein likhi hui raqmein parhta hai. Kuch dobara nahi ginta.
+   ───────────────────────────────────────────────────────────────────────── */
+
+function postOrder(client, order) {
+  const J = [];
+  const due = order.bill - order.received;
+
+  if (order.received > 0)
+    J.push({ account:'1000', dr:order.received, cr:0, ref:order.id, at:order.at });
+
+  if (due > 0) {
+    if (!order.customer)
+      throw new Error('Bakaya kis ke naam? Walk-in par udhaar nahi.');
+    J.push({ account:'1100', dr:due, cr:0, ref:order.id, at:order.at,
+             party:order.customer.name });
+  }
+
+  J.push({ account:'4000', dr:0, cr:order.subtotal, ref:order.id, at:order.at });
+
+  // Tax ka khaata sirf tab jab us order par waqai tax laga tha
+  if (order.tax.amount > 0)
+    J.push({ account:'2250', dr:0, cr:order.tax.amount, ref:order.id, at:order.at });
+
+  const dr = J.reduce((s,x)=>s+x.dr,0), cr = J.reduce((s,x)=>s+x.cr,0);
+  if (Math.abs(dr-cr) > 0.009)
+    throw new Error('Journal barabar nahi: Dr ' + dr + ' Cr ' + cr);
+
+  client.journal = client.journal || [];
+  J.forEach(x => client.journal.push(x));
+  client.orders = client.orders || [];
+  client.orders.push(order);
+  return J;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────────
+   HISSA 4 — GRAHAK KA KHATA
+   Journal se banta hai, order ko dobara gin kar nahi.
+   Isi liye GST band karne se purana udhaar nahi hilta.
+   ───────────────────────────────────────────────────────────────────────── */
+
+function customerLedger(client, name) {
+  const lines = (client.journal||[]).filter(j => j.account==='1100' && j.party===name);
+  const paid  = (client.payments||[]).filter(p => p.party===name);
+  const owes  = lines.reduce((s,l)=>s+l.dr,0) - paid.reduce((s,p)=>s+(p.amount||0),0);
+  return { name, entries: lines.length, owes: Math.round(owes*100)/100 };
+}
+
+/* Grahak ko chhoot dena — sirf aage ke orders par asar. */
+function setTaxExempt(client, session, name, exempt) {
+  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
+  const c = (client.customers||[]).find(x => x.name === name);
+  if (!c) throw new Error('Grahak nahi mila: ' + name);
+  c.taxExempt = !!exempt;
+  return c;   // purane orders ko haath nahi lagta
 }
 
 /* =========================================================================
@@ -2134,2283 +2421,4 @@ function closeDay(client, session, date, counted) {
   client.closedDays = client.closedDays || [];
   client.closedDays.push({
     date, openingCash:op, closingCash:cl,
-    orders:m.orders, netSales:m.netSales, tax:m.tax,
-    cashSales:m.cashSales, creditSales:m.creditSales,
-    expenses:m.totalExpenses, purchases:m.totalPurchases,
-    cashDiff: rec ? rec.diff : 0,
-    closedBy: session.role, at: new Date().toISOString()
-  });
-
-  return client.closedDays[client.closedDays.length - 1];
-}
-
-/* Band din ke baad koi entry us din mein nahi ja sakti */
-function assertDayOpen(client, date) {
-  if (isDayClosed(client, date))
-    throw new Error(date + ' band ho chuka hai — entry agle khule din mein jayegi');
-  return true;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 6 — P&L
-   Journal se banta hai, orders dobara gin kar nahi. Isi liye GST band
-   karne ya module hatane se purana P&L nahi hilta.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function accountType(client, code) {
-  const a = (client.coa || []).find(x => x.code === code);
-  return a ? a.type : null;
-}
-
-function profitAndLoss(client, from, to) {
-  const inRange = j => {
-    const d = dayOf(j.at);
-    return (!from || d >= from) && (!to || d <= to);
-  };
-
-  const bal = {};
-  (client.journal || []).filter(inRange).forEach(j => {
-    bal[j.account] = (bal[j.account] || 0) + (Number(j.cr)||0) - (Number(j.dr)||0);
-  });
-
-  const revenue = Object.entries(bal)
-    .filter(([c]) => accountType(client,c) === 'Income')
-    .reduce((s,[,v]) => s + v, 0);
-
-  const expenses = Object.entries(bal)
-    .filter(([c]) => accountType(client,c) === 'Expense')
-    .map(([c,v]) => ({ code:c, name:(client.coa.find(a=>a.code===c)||{}).name, amount:-v }))
-    .filter(x => Math.abs(x.amount) > 0.001)
-    .sort((a,b) => b.amount - a.amount);
-
-  const cogs     = expenses.filter(e => e.code==='5000' || e.code==='5050')
-                           .reduce((s,e) => s+e.amount, 0);
-  const otherExp = expenses.filter(e => e.code!=='5000' && e.code!=='5050')
-                           .reduce((s,e) => s+e.amount, 0);
-
-  const r2 = n => Math.round(n*100)/100;
-  return {
-    from, to,
-    revenue:  r2(revenue),
-    cogs:     r2(cogs),
-    gross:    r2(revenue - cogs),
-    expenses: expenses.map(e => ({ code:e.code, name:e.name, amount:r2(e.amount) })),
-    totalExpenses: r2(otherExp),
-    net:      r2(revenue - cogs - otherExp)
-  };
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 7 — TRIAL BALANCE
-   Har roz chalni chahiye. Barabar na ho to hisaab mein kahin surakh hai.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function trialBalance(client) {
-  const rows = {};
-  (client.journal || []).forEach(j => {
-    const r = rows[j.account] = rows[j.account] || { dr:0, cr:0 };
-    r.dr += Number(j.dr)||0;
-    r.cr += Number(j.cr)||0;
-  });
-
-  const out = Object.entries(rows).map(([code,v]) => ({
-    code,
-    name: (client.coa.find(a=>a.code===code)||{}).name || '(COA mein nahi)',
-    type: accountType(client, code),
-    dr: Math.round(v.dr*100)/100,
-    cr: Math.round(v.cr*100)/100
-  })).sort((a,b) => a.code.localeCompare(b.code));
-
-  const dr = out.reduce((s,r)=>s+r.dr,0), cr = out.reduce((s,r)=>s+r.cr,0);
-  const orphan = out.filter(r => !r.type).map(r => r.code);
-
-  return {
-    rows: out,
-    totalDr: Math.round(dr*100)/100,
-    totalCr: Math.round(cr*100)/100,
-    barabar: Math.abs(dr-cr) < 0.01,
-    coaMeinNahi: orphan
-  };
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 8 — DASHBOARD KE AANKRAY
-   Dashboard yahi parhta hai. Apna hisaab khud nahi karta —
-   warna do jagah do jawab ho jate hain.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function dashboardNumbers(client, date) {
-  const m  = dayMovements(client, date);
-  const op = openingCash(client, date);
-
-  const receivable = (client.journal||[])
-    .filter(j => j.account === '1100')
-    .reduce((s,j) => s + (Number(j.dr)||0) - (Number(j.cr)||0), 0);
-
-  const top = {};
-  (client.orders||[]).filter(o => dayOf(o.at) === date)
-    .forEach(o => (o.items||[]).forEach(i => { top[i.name] = (top[i.name]||0) + (Number(i.qty)||0); }));
-
-  return {
-    todaySales:  Math.round(m.totalBilled*100)/100,
-    todayOrders: m.orders,
-    cashInHand:  Math.round(closingCash(op, m)*100)/100,
-    receivables: Math.round(receivable*100)/100,
-    topItems:    Object.entries(top).sort((a,b)=>b[1]-a[1]).slice(0,5)
-                       .map(([name,qty]) => ({ name, qty })),
-    dayClosed:   isDayClosed(client, date)
-  };
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 9 — ORDER CANCEL / ULTI ENTRY
-   Hisaab mein entry KABHI mitayi nahi jati. Ghalti ho to ULTI entry daali
-   jati hai — asal entry apni jagah rehti hai, aur nateeja sifr ho jata hai.
-
-   Kyun: agar entry mita di jaye to (a) journal ka nishaan toot jata hai,
-   (b) doosre device par woh entry pehle se ja chuki hoti hai aur wapas aa
-   jati hai, (c) kisi ko pata nahi chalta ke kya hua tha.
-
-   Band shuda din mein cancel nahi ho sakta — woh din mustaqil hai.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function canVoidOrder(client, order) {
-  if (!order) return { ok:false, why:'Order nahi mila' };
-  if (isVoided(client, 'order', order.id)) return { ok:false, why:'Yeh order pehle se cancel hai' };
-  if (isDayClosed(client, dayOf(order.at)))
-    return { ok:false, why:dayOf(order.at) + ' band ho chuka hai — us din ka order cancel nahi hota' };
-  return { ok:true };
-}
-
-function voidOrder(client, session, orderId, reason) {
-  if (!session.canWriteAccounts) throw new Error('Sirf owner ya manager cancel kar sakta hai');
-
-  const o = (client.orders||[]).find(x => x.id === orderId);
-  const chk = canVoidOrder(client, o);
-  if (!chk.ok) throw new Error(chk.why);
-
-  const at = new Date().toISOString();
-  const lines = (client.journal||[]).filter(j => j.ref === o.id);
-  if (!lines.length) throw new Error('Is order ki journal entries nahi milin');
-
-  // Har line ki ULTI — Dr ki jagah Cr, Cr ki jagah Dr
-  lines.forEach((j, n) => {
-    client.journal.push({
-      account: j.account,
-      dr: Number(j.cr)||0,
-      cr: Number(j.dr)||0,
-      at, ref: 'VOID-' + o.id, party: j.party,
-      desc: 'Cancel — ' + o.id + (reason ? ' (' + reason + ')' : '')
-    });
-  });
-
-  client.voids = client.voids || [];
-  client.voids.push({ kind:'order', id:o.id, at, by:session.role, reason: reason || '' });
-  o.status = 'cancelled';
-
-  return { id:o.id, ultiLines: lines.length, at };
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 10 — SUPPLIER KO ADAIGI
-   Journal: 2000 Accounts Payable Dr | Cash Cr
-   (Grahak ki wasooli ka ulta.)
-   ───────────────────────────────────────────────────────────────────────── */
-
-function paySupplier(client, session, { name, amount, date, from='1000', note }) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  const amt = Math.round((Number(amount)||0) * 100) / 100;
-  if (amt <= 0) throw new Error('Raqam likhein');
-
-  const dena = partyBalance(client, name, 'supplier');
-  if (amt > dena + 0.5) throw new Error('Dene se zyada nahi — ' + name + ' ko sirf ' + dena + ' dena hai');
-
-  const D  = date || localToday();
-  const at = new Date().toISOString();
-  // Sirf Date.now() se ID banane par bug tha: do adaigiyan usi millisecond
-  // mein ho jayen (jaisa test mein hua — dono ki raqam bhi ittefaqan barabar
-  // thi) to ID aur waqt dono barabar ban jate, aur duplicate-entry pehra
-  // dusri ko "wahi entry dobara" samajh kar CHUP CHAAP rok deta — payment
-  // hoti hi nahi, koi error bhi nazar nahi aata. newRef() isi liye counter
-  // rakhta hai (E5), taake ek hi millisecond mein bhi ID hamesha alag rahe.
-  const id = (typeof newRef === 'function')
-    ? newRef('SPAY')
-    : 'SPAY-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,6);
-
-  return {
-    id, date: D, at, party: name, amount: amt,
-    lines: [
-      { account:'2000', dr:amt, cr:0,   at, ref:id, party:name, desc: note || 'Supplier ko adaigi' },
-      { account:from,   dr:0,   cr:amt, at, ref:id, party:name }
-    ]
-  };
-}
-
-/* =========================================================================
-   HF SOLUTIONS — E7: EQUITY, PARTNERS, LOANS, BALANCE SHEET
-   =========================================================================
-   JO GHALAT HO RAHA THA (Cheema ke asal record se):
-
-   - "3900 Opening Balance Equity" ko rozana ka khaata bana diya gaya tha:
-     490 entries, Rs 589,547, in mein 454 "Balance sync".
-     Yeh khaata accounting mein SIRF EK BAAR chalta hai — karobar shuru
-     karte waqt — aur phir hamesha ke liye SIFR rehta hai.
-
-   - Asal wajah: balance DO jagah rakha ja raha tha — customer.balance
-     mein bhi aur journal mein bhi. Dono alag ho jate the, is liye
-     "Balance sync" ki entry daal kar milaya jata tha. 454 baar.
-
-   IS FILE KA BUNYADI USOOL:
-     BALANCE KAHIN RAKHA HI NAHI JATA. Woh journal se nikalta hai.
-     Do jagah hain hi nahi, to sync ki zaroorat hi nahi.
-
-   - Opening cash 4,000 haath se daali gayi thi, 15 August ko, jab
-     karobar 14 August ko shuru ho chuka tha. Furniture 200,000 bhi
-     seedha 3900 mein. Ab shuruaat ek hi entry hai, ek hi tareekh par.
-
-   E1, E2, E6 pehle load hon.
-   ========================================================================= */
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 1 — EQUITY KE KHAATE
-   ───────────────────────────────────────────────────────────────────────── */
-
-const EQUITY_ACCOUNTS = [
-  { code:'3000', name:"Owner's Capital",          type:'Equity' },
-  { code:'3100', name:"Owner's Drawings",         type:'Equity' },
-  { code:'3200', name:'Retained Earnings',        type:'Equity' },
-  { code:'3900', name:'Opening Balance Equity',   type:'Equity' },  // ek baar, phir SIFR
-  { code:'3950', name:'Profit & Loss Summary',    type:'Equity' }   // sirf period close par
-];
-
-/* Har partner ke teen khaate. Percentage partner ke record mein,
-   khaate mein nahi — warna % badalne par khaata badalna paRta. */
-function partnerAccounts(i) {
-  const n = String(i).padStart(2,'0');
-  return {
-    capital:  { code:'30'+n, name:'Partner Capital — #'+i,  type:'Equity' },
-    current:  { code:'32'+n, name:'Partner Current — #'+i,  type:'Equity' },
-    drawings: { code:'33'+n, name:'Partner Drawings — #'+i, type:'Equity' }
-  };
-}
-
-function setupPartners(client, session, list) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-
-  const total = list.reduce((s,p) => s + (Number(p.pct)||0), 0);
-  if (Math.abs(total - 100) > 0.01)
-    throw new Error('Partners ki percentage ka jorh 100 hona chahiye, abhi ' + total);
-
-  client.partners = list.map((p, i) => {
-    const acc = partnerAccounts(i+1);
-    Object.values(acc).forEach(a => {
-      if (!client.coa.some(x => x.code === a.code))
-        client.coa.push(Object.assign({}, a, { name: a.name.replace('#'+(i+1), p.name) }));
-    });
-    return { id:'P'+(i+1), name:p.name, pct:Number(p.pct),
-             capitalAc:acc.capital.code, currentAc:acc.current.code, drawingsAc:acc.drawings.code };
-  });
-  return client.partners;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 2 — BALANCE JOURNAL SE NIKALTA HAI
-   Yeh woh function hai jo "Balance sync" ki zaroorat khatam karta hai.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function accountBalance(client, code, asOf) {
-  return (client.journal || [])
-    .filter(j => j.account === code && (!asOf || dayOf(j.at) <= asOf))
-    .reduce((s,j) => s + (Number(j.dr)||0) - (Number(j.cr)||0), 0);
-}
-
-/* Grahak ka balance = us ke naam ki 1100 ki saari lines ka jorh.
-   Kahin store nahi hota. Payment ho ya sale — dono khud shamil. */
-function partyBalance(client, name, kind) {
-  // 'vehicleOwner' Car Rental Core (E8) ke liye — third-party gaRi ke
-  // malik ko kitna dena hai (2300). Bug: yeh function pehle sirf grahak
-  // (1100) aur supplier (2000) jaanta tha — Car Rental ke 'ownerPayouts'
-  // report ka koi zariya hi nahi tha jab tak yeh na jorha jata.
-  const codeMap = { supplier:'2000', vehicleOwner:'2300' };
-  const code = codeMap[kind] || '1100';
-  const sign = codeMap[kind] ? -1 : 1;
-  return Math.round(sign * (client.journal || [])
-    .filter(j => j.account === code && j.party === name)
-    .reduce((s,j) => s + (Number(j.dr)||0) - (Number(j.cr)||0), 0) * 100) / 100;
-}
-
-/* Sab third-party gaRi maalikon ki fehrist, kis ko kitna dena hai. */
-function vehicleOwnerPayouts(client) {
-  const owners = [...new Set((client.vehicles||[])
-    .filter(v => v.ownership === 'thirdParty')
-    .map(v => v.ownerName))];
-  return owners.map(name => ({ name, owed: partyBalance(client, name, 'vehicleOwner') }))
-               .filter(x => Math.abs(x.owed) > 0.005);
-}
-
-function payVehicleOwner(client, session, { name, amount, date, from='1000' }) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  const amt = Math.round((Number(amount)||0) * 100) / 100;
-  if (amt <= 0) throw new Error('Raqam likhein');
-  const owed = partyBalance(client, name, 'vehicleOwner');
-  if (amt > owed + 0.5) throw new Error('Dene se zyada nahi — ' + name + ' ko sirf ' + owed + ' dena hai');
-  const at = new Date().toISOString();
-  const id = 'OPAY-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,6);
-  return { id, date: date || localToday(), at, party: name, amount: amt,
-    lines: [
-      { account:'2300', dr:amt, cr:0,   at, ref:id, party:name, desc:'Malik ko adaigi' },
-      { account:from,   dr:0,   cr:amt, at, ref:id, party:name }
-    ] };
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 3 — KAAROBAR KI SHURUAAT — EK BAAR, EK TAREEKH
-   Cash + stock + FFE + jo logon ne dena hai − jo hum ne dena hai = Capital
-   Us ke baad 3900 hamesha SIFR.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function postOpening(client, session, { date, cash=0, bank=0, stock=0, rawStock=0, ffe=0,
-                                        receivables=[], payables=[], loans=[] }) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  if (client.openingPosted)
-    throw new Error('Shuruaati entry pehle se ho chuki hai (' + client.openingPosted + ')');
-  if (!date) throw new Error('Shuruaat ki tareekh chahiye');
-
-  const at = atFor(date, 0, 1);
-  const J = [];
-  const add = (account, dr, cr, party) => {
-    if (Math.abs(dr) < 0.005 && Math.abs(cr) < 0.005) return;
-    J.push({ account, dr, cr, at, ref:'OPENING', desc:'Shuruaat', party });
-  };
-
-  // Jo hamare paas hai
-  add('1000', cash, 0);
-  add('1010', bank, 0);
-  add('1200', stock, 0);
-  add('1250', rawStock, 0);
-  add('1310', ffe, 0);
-  receivables.forEach(r => add('1100', Number(r.amount)||0, 0, r.name));
-
-  // Jo hum ne dena hai
-  payables.forEach(p => add('2000', 0, Number(p.amount)||0, p.name));
-  loans.forEach(l => add(l.account || '2150', 0, Number(l.amount)||0, l.name));
-
-  // Farq = maalik ka sarmaya
-  const dr = J.reduce((s,x)=>s+x.dr,0), cr = J.reduce((s,x)=>s+x.cr,0);
-  const capital = Math.round((dr - cr) * 100) / 100;
-
-  if (client.partners && client.partners.length) {
-    client.partners.forEach(p => {
-      const share = Math.round(capital * p.pct) / 100;
-      add(p.capitalAc, 0, share, p.name);
-    });
-    // paisa-paisa milaane ke liye pehle partner par adjust
-    const c2 = J.reduce((s,x)=>s+x.cr,0);
-    const gap = Math.round((dr - c2) * 100) / 100;
-    if (Math.abs(gap) > 0.005) add(client.partners[0].capitalAc, 0, gap, client.partners[0].name);
-  } else {
-    add('3000', 0, capital);
-  }
-
-  const d2 = J.reduce((s,x)=>s+x.dr,0), c3 = J.reduce((s,x)=>s+x.cr,0);
-  if (Math.abs(d2-c3) > 0.009) throw new Error('Shuruaati entry barabar nahi: ' + d2 + ' vs ' + c3);
-
-  client.journal = client.journal || [];
-  J.forEach(x => client.journal.push(x));
-  client.openingPosted = date;
-  client.openingCash = { date, amount: cash };
-
-  return { date, capital, lines:J.length };
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 4 — DRAWINGS (owner ya partner)
-   YEH KHARCHA NAHI HAI. P&L ko chhoota hi nahi.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function recordDrawing(client, session, { who, amount, date, from='1000', note }) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  const amt = Number(amount)||0;
-  if (amt <= 0) throw new Error('Raqam theek nahi');
-
-  let acc = '3100', name = 'Owner';
-  if (who) {
-    const p = (client.partners||[]).find(x => x.name === who || x.id === who);
-    if (p) { acc = p.drawingsAc; name = p.name; }
-  }
-  const at = atFor(date || localToday(), 12, 0);
-  client.journal.push({ account:acc,  dr:amt, cr:0,   at, ref:'DRAW', party:name, desc:note||'Nikasi' });
-  client.journal.push({ account:from, dr:0,   cr:amt, at, ref:'DRAW', party:name });
-  return { who:name, amount:amt, account:acc };
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 5 — LOAN AUR INTEREST
-   Qist DO hisson mein: principal qarz kam karta hai, interest P&L mein
-   jata hai. Yahi woh jagah hai jahan aksar poori qist kharcha likh di
-   jati hai aur munafa ghalat ho jata hai.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function addLoan(client, session, { name, amount, rate, startDate, months, account='2150', into='1000' }) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  const amt = Number(amount)||0;
-  const at = atFor(startDate, 0, 1);
-
-  client.journal.push({ account:into,    dr:amt, cr:0,   at, ref:'LOAN', party:name });
-  client.journal.push({ account:account, dr:0,   cr:amt, at, ref:'LOAN', party:name });
-
-  client.loans = client.loans || [];
-  const loan = { id:'L'+(client.loans.length+1), name, principal:amt,
-                 rate:Number(rate)||0, startDate, months:Number(months)||0, account };
-  client.loans.push(loan);
-  return loan;
-}
-
-/* Maheena-war qist — ghatti hui baqiya par sood (reducing balance) */
-function loanSchedule(loan) {
-  const r = (loan.rate/100)/12, n = loan.months;
-  if (!n) return [];
-  const emi = r > 0 ? (loan.principal * r) / (1 - Math.pow(1+r, -n)) : loan.principal/n;
-  let bal = loan.principal;
-  const out = [];
-  for (let i=1; i<=n; i++) {
-    const interest  = Math.round(bal * r * 100)/100;
-    const principal = Math.round((emi - interest) * 100)/100;
-    bal = Math.round((bal - principal) * 100)/100;
-    out.push({ n:i, emi:Math.round(emi*100)/100, principal, interest, baqi:Math.max(bal,0) });
-  }
-  return out;
-}
-
-function payInstallment(client, session, { loanId, date, principal, interest, from='1000' }) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  const loan = (client.loans||[]).find(l => l.id === loanId);
-  if (!loan) throw new Error('Loan nahi mila: ' + loanId);
-
-  const p = Number(principal)||0, i = Number(interest)||0;
-  const at = atFor(date, 12, 0);
-
-  client.journal.push({ account:loan.account, dr:p,   cr:0,   at, ref:'EMI-'+loanId, party:loan.name });
-  client.journal.push({ account:'5995',       dr:i,   cr:0,   at, ref:'EMI-'+loanId, party:loan.name,
-                        desc:'Sood — ' + loan.name });
-  client.journal.push({ account:from,         dr:0,   cr:p+i, at, ref:'EMI-'+loanId, party:loan.name });
-
-  return { loanId, principal:p, interest:i, kul:p+i, baqi:-accountBalance(client, loan.account) };
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 6 — ARSE KA IKHTITAAM
-   Rozana nahi. Owner dabaye tab. Profit partners mein % se bant'ta hai.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function closePeriod(client, session, from, to) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  (client.closedPeriods||[]).forEach(p => {
-    if (!(to < p.from || from > p.to))
-      throw new Error('Yeh arsa pehle se band hai: ' + p.from + ' se ' + p.to);
-  });
-
-  const pl = profitAndLoss(client, from, to);
-  const at = atFor(to, 23, 59);
-  const net = pl.net;
-
-  const parts = [];
-  if (client.partners && client.partners.length) {
-    let given = 0;
-    client.partners.forEach((p, idx) => {
-      let share = Math.round(net * p.pct) / 100;
-      if (idx === client.partners.length-1) share = Math.round((net - given)*100)/100;
-      given = Math.round((given + share)*100)/100;
-      client.journal.push({ account:p.currentAc, dr: share<0?-share:0, cr: share>0?share:0,
-                            at, ref:'CLOSE-'+to, party:p.name, desc:'Munafe ka hissa ('+p.pct+'%)' });
-      parts.push({ name:p.name, pct:p.pct, share });
-    });
-  } else {
-    client.journal.push({ account:'3200', dr: net<0?-net:0, cr: net>0?net:0,
-                          at, ref:'CLOSE-'+to, desc:'Jama shuda munafa' });
-    parts.push({ name:'Owner', pct:100, share:net });
-  }
-
-  client.journal.push({ account:'3950', dr: net>0?net:0, cr: net<0?-net:0,
-                        at, ref:'CLOSE-'+to, desc:'P&L summary' });
-
-  client.closedPeriods = client.closedPeriods || [];
-  client.closedPeriods.push({ from, to, net, parts, at:new Date().toISOString() });
-  return { from, to, net, parts };
-}
-
-/* Saal ke akhir: Drawings apne Current/Capital mein band ho kar sifr */
-function closeDrawings(client, session, date) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  const at = atFor(date, 23, 59);
-  const done = [];
-
-  const shut = (drawAc, toAc, name) => {
-    const bal = Math.round(accountBalance(client, drawAc, date) * 100)/100;
-    if (Math.abs(bal) < 0.005) return;
-    client.journal.push({ account:toAc,   dr:bal, cr:0,   at, ref:'DRAW-CLOSE', party:name });
-    client.journal.push({ account:drawAc, dr:0,   cr:bal, at, ref:'DRAW-CLOSE', party:name });
-    done.push({ name, amount:bal });
-  };
-
-  if (client.partners && client.partners.length)
-    client.partners.forEach(p => shut(p.drawingsAc, p.currentAc, p.name));
-  else
-    shut('3100', '3000', 'Owner');
-
-  return done;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 7 — BALANCE SHEET
-   Assets = Liabilities + Equity. Barabar na ho to kahin entry adhoori hai.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function balanceSheet(client, asOf) {
-  const group = t => (client.coa||[])
-    .filter(a => a.type === t)
-    .map(a => ({ code:a.code, name:a.name,
-                 amount: Math.round(accountBalance(client, a.code, asOf) * (t==='Asset'?1:-1) * 100)/100 }))
-    .filter(x => Math.abs(x.amount) > 0.005);
-
-  const assets = group('Asset');
-  const liabs  = group('Liability');
-  const equity = group('Equity');
-
-  // Arse ka woh munafa jo abhi band nahi hua
-  const rev = (client.coa||[]).filter(a=>a.type==='Income')
-    .reduce((s,a) => s - accountBalance(client, a.code, asOf), 0);
-  const exp = (client.coa||[]).filter(a=>a.type==='Expense')
-    .reduce((s,a) => s + accountBalance(client, a.code, asOf), 0);
-  const current = Math.round((rev - exp) * 100)/100;
-
-  const r2 = n => Math.round(n*100)/100;
-  const ta = r2(assets.reduce((s,x)=>s+x.amount,0));
-  const tl = r2(liabs.reduce((s,x)=>s+x.amount,0));
-  const te = r2(equity.reduce((s,x)=>s+x.amount,0) + current);
-
-  return {
-    asOf, assets, liabilities:liabs, equity,
-    currentPeriodProfit: current,
-    totalAssets: ta, totalLiabilities: tl, totalEquity: te,
-    barabar: Math.abs(ta - (tl + te)) < 0.01,
-    farq: r2(ta - (tl + te))
-  };
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 8 — ACCOUNTING KI JAANCH
-   Rozana chale. Purani ghaltiyan yahin pakRi jatin.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function auditAccounting(client) {
-  const p = [];
-
-  // 1. 3900 par har entry ki APNI PEHCHAN honi chahiye — 'OPENING' (poori
-  //    shuruaat) ya 'OPENING-customer-<naam>' / 'OPENING-supplier-<naam>'
-  //    (kisi naye party ka ek-dafa purana hisaab). Naam-shuda tabdeeli
-  //    theek hai — 3900 ka HAMESHA sifr rehna zaroori nahi (Principle 6:
-  //    balance ek ek karke, jab zaroorat ho, darj hote hain).
-  //    Gumnaam ya DOHRAI hui tabdeeli hi asal masla hai — wahi purani
-  //    "Balance sync" tabahi thi.
-  const obLines = (client.journal||[]).filter(j => j.account === '3900');
-  obLines.forEach(j => {
-    const okRef = j.ref === 'OPENING' || /^OPENING-(customer|supplier)-.+/.test(j.ref || '');
-    if (!okRef) p.push('3900 par gumnaam entry: ' + JSON.stringify(j) + ' — yahi purana "Balance sync" wala masla tha');
-  });
-  const refCounts = {};
-  obLines.forEach(j => { refCounts[j.ref] = (refCounts[j.ref]||0) + 1; });
-  Object.entries(refCounts).forEach(([ref,n]) => {
-    if (n > 2) p.push('3900 par "' + ref + '" ' + n + ' baar — dohrai hui entry lagti hai (2 line/entry se zyada)');
-  });
-
-  // 2. Trial balance
-  const tb = trialBalance(client);
-  if (!tb.barabar) p.push('Trial balance barabar nahi: Dr ' + tb.totalDr + ' Cr ' + tb.totalCr);
-  tb.coaMeinNahi.forEach(c => p.push('Khaata COA mein nahi: ' + c));
-
-  // 3. Balance sheet
-  const bs = balanceSheet(client);
-  if (!bs.barabar) p.push('Balance Sheet barabar nahi, farq: ' + bs.farq);
-
-  // 4. Partners
-  if (client.partners && client.partners.length) {
-    const t = client.partners.reduce((s,x)=>s+x.pct,0);
-    if (Math.abs(t-100) > 0.01) p.push('Partners ki percentage ka jorh ' + t + ', 100 hona chahiye');
-  }
-
-  // 5. Hubahu dobara entry
-  //    (Cheema ke asal record mein 73 entries bilkul ek jaisi thin,
-  //     kuch 4 aur 5 baar — 100 fazool copies, Rs 62,594. Har "sync"
-  //     agli "sync" ki wajah banta tha.)
-  const seen = new Map();
-  (client.journal||[]).forEach(j => {
-    const k = [j.at, j.account, j.dr||0, j.cr||0, j.party||'', j.ref||''].join('|');
-    seen.set(k, (seen.get(k)||0) + 1);
-  });
-  [...seen.entries()].filter(([,n]) => n > 1).forEach(([k,n]) => {
-    const x = k.split('|');
-    p.push('Ek hi entry ' + n + ' baar: ' + dayOf(x[0]) + ' khaata ' + x[1] +
-           ' raqam ' + (Number(x[2])||Number(x[3])) + (x[4] ? ' — ' + x[4] : ''));
-  });
-
-  // 6. Balance kahin store to nahi ho raha
-  const stored = (client.customers||[]).filter(c => Number(c.balance)).length;
-  if (stored) p.push(stored + ' customers ke record mein balance likha hai — ' +
-                     'balance journal se nikalna chahiye, store nahi hona chahiye');
-
-  return p;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 9 — HUBAHU DOBARA ENTRY KA PEHRA
-   Har journal line isi se guzre. Bilkul ek jaisi line dobara qubool nahi.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function journalKey(line) {
-  return [line.at, line.account, line.dr||0, line.cr||0, line.party||'', line.ref||''].join('|');
-}
-
-function pushJournal(client, line) {
-  client.journal = client.journal || [];
-  const k = journalKey(line);
-  if (client.journal.some(j => journalKey(j) === k))
-    throw new Error('Yeh entry pehle se maujood hai — dobara nahi jayegi ' +
-                    '(' + dayOf(line.at) + ' khaata ' + line.account + ')');
-  client.journal.push(line);
-  return line;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 10 — NAYE GRAHAK/SUPPLIER KA PURANA HISAAB
-   ASAL MASLA JO YEH THEEK KARTA HAI:
-   Purani "Balance sync" tabahi (454 dafa) isi jagah se shuru hui thi —
-   kisi grahak ka purana hisaab daalne ka koi saaf raasta nahi tha, is
-   liye har dafa asal balance se milane ke liye ek nayi "sync" entry
-   thonsi jati thi. 3900 rozana ka khaata ban gaya tha.
-
-   postOpening() SIRF EK DAFA chalta hai — poore karobar ki shuruaat.
-   Yeh function ALAG hai: naya grahak/supplier KISI BHI DIN aa sakta hai,
-   aur us ka purana hisaab (jo software se pehle ka hai) EK DAFA darj
-   hota hai — apni pehchan ke saath, dobara nahi ho sakta.
-
-   Dono taraf ka farq Opening Balance Equity (3900) mein jata hai — yeh
-   sahi hai: yeh raqam is liye nahi ke aaj kuch bika, balki is liye ke
-   maalik ka asal sarmaya pehle se ITNA HI kam/zyada tha, sirf darj nahi
-   hua tha. Isi liye 3900 "sifr" nahi rehta — woh WAJAH SE badalta hai,
-   aur har tabdeeli apne naam se pehchani jati hai (auditAccounting neeche
-   isi farq ko dekhta hai: naam-shuda tabdeeli theek hai, gumnaam/dohrai
-   hui tabdeeli masla hai). */
-
-function addPartyOpeningBalance(client, session, { name, kind, amount, date, note }) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  if (!['customer','supplier'].includes(kind)) throw new Error('kind: customer ya supplier hona chahiye');
-  const amt = Math.round((Number(amount)||0) * 100) / 100;
-  if (amt <= 0) throw new Error('Raqam likhein');
-  if (!name || !name.trim()) throw new Error('Naam chahiye');
-
-  // Apni pehchan — isi naam ke is qism ke party ka purana hisaab
-  // sirf EK DAFA. Dobara koshish saaf ruk jati hai.
-  const ref = 'OPENING-' + kind + '-' + name.trim();
-  if ((client.journal||[]).some(j => j.ref === ref))
-    throw new Error(name + ' ka purana hisaab pehle hi darj ho chuka hai');
-
-  const at = (date || localToday()) + 'T00:01:00Z';
-  const acc = kind === 'customer' ? '1100' : '2000';
-
-  const J = kind === 'customer'
-    ? [ { account:acc,   dr:amt, cr:0,   at, ref, party:name.trim(), desc: note || 'Purana hisaab' },
-        { account:'3900',dr:0,   cr:amt, at, ref } ]
-    : [ { account:'3900',dr:amt, cr:0,   at, ref },
-        { account:acc,   dr:0,   cr:amt, at, ref, party:name.trim(), desc: note || 'Purana hisaab' } ];
-
-  J.forEach(l => pushJournal(client, l));
-  return { ref, lines: J };
-}
-
-/* =========================================================================
-   HF SOLUTIONS — E8: CAR RENTAL CORE PRINT
-   =========================================================================
-   BUNYADI FARQ Restaurant Core se: yeh Bhaikhan ya Sallar ke asal code se
-   NAHI banaya — na Muhammad ke paas woh code hai, na yahan. Restaurant
-   Core jis tarah Basha ke asal record se banaya gaya (andaze se nahi),
-   yeh usi darje ki sanad nahi rakhta. Sifar se likha gaya hai:
-     - Muhammad ki di hui maloomat (teen ownership qismein, booking se
-       pehle rate tay, walk-in par bhi naam lazmi, CNIC camera se seedha
-       form mein, aakhir mein WhatsApp bill + rental agreement)
-     - Bazaar ki tehqeeq (CNIC, license, security deposit, mileage cap,
-       fuel policy, self-drive/chauffeur — Pakistan ke rent-a-car market
-       se)
-     - Purane record mein bache huay asal khaate (1300/1301/2200/2300/
-       4200/5150 — yeh Cheema/Basha ke COA mein "leak" hue paye gaye the,
-       matlab kisi purane Car Rental system mein waqai istemal ho chuke
-       hain — inhi ko bunyad banaya gaya)
-
-   Isi liye jab Bhaikhan ya Sallar ka asal code mil jaye, is Core ko
-   USI SE dobara jaanchna hoga — jaisa hua to hi "proven Core" kehlayega.
-   Filhaal yeh pehla khaka hai, live client ke baghair.
-   ========================================================================= */
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 1 — ZABAAN (LANG ke ander naye chaabiyan)
-   Restaurant Core ke LANG object mein yeh shamil hongi. Chaabi wahi rehti
-   hai, matn zaban se — Principle jaisa E1 mein tha.
-   ───────────────────────────────────────────────────────────────────────── */
-
-const CAR_LANG_KEYS = {
-  ro: {
-    todayBookings:'Aaj Ki Bookings', vehiclesOut:'Bahar Gayi Gariyan',
-    vehiclesAvailable:'Khali Gariyan', duePayments:'Bakaya Wasooli',
-    vehicle:'Gari', renter:'Grahak', booking:'Booking',
-    selfDrive:'Khud Chalayein', chauffeur:'Driver Ke Saath',
-    walkin:'Walk-in', cnic:'CNIC', license:'License',
-    deposit:'Security', dailyRate:'Roz Ka Kiraya', pickup:'Pickup',
-    dropoff:'Wapsi', mileage:'Meter Reading', fuel:'Fuel Level',
-    owned:'Apni', leased:'Bank Lease', thirdParty:'Kisi Aur Ki (Commission)',
-    commission:'Commission', ownerShare:'Malik Ka Hissa',
-    lateFee:'Der Ki Fine', extraKm:'Extra KM Ka Kharcha',
-    agreement:'Rental Agreement', damage:'Nuqsan',
-    available:'Khali', rented:'Kiraye Par', maintenance:'Marammat Mein'
-  },
-  en: {
-    todayBookings:'Today\u2019s Bookings', vehiclesOut:'Vehicles Out',
-    vehiclesAvailable:'Available Vehicles', duePayments:'Payments Due',
-    vehicle:'Vehicle', renter:'Customer', booking:'Booking',
-    selfDrive:'Self-Drive', chauffeur:'With Driver',
-    walkin:'Walk-in', cnic:'CNIC', license:'License',
-    deposit:'Security', dailyRate:'Daily Rate', pickup:'Pickup',
-    dropoff:'Drop-off', mileage:'Odometer', fuel:'Fuel Level',
-    owned:'Owned', leased:'Bank Lease', thirdParty:'Third-Party (Commission)',
-    commission:'Commission', ownerShare:"Owner's Share",
-    lateFee:'Late Fee', extraKm:'Extra KM Charge',
-    agreement:'Rental Agreement', damage:'Damage',
-    available:'Available', rented:'Rented', maintenance:'In Maintenance'
-  },
-  ur: {
-    todayBookings:'آج کی بکنگز', vehiclesOut:'باہر گئی گاڑیاں',
-    vehiclesAvailable:'خالی گاڑیاں', duePayments:'بقایا وصولی',
-    vehicle:'گاڑی', renter:'گاہک', booking:'بکنگ',
-    selfDrive:'خود چلائیں', chauffeur:'ڈرائیور کے ساتھ',
-    walkin:'واک اِن', cnic:'شناختی کارڈ', license:'لائسنس',
-    deposit:'سیکیورٹی', dailyRate:'روز کا کرایہ', pickup:'پک اپ',
-    dropoff:'واپسی', mileage:'میٹر ریڈنگ', fuel:'فیول لیول',
-    owned:'اپنی', leased:'بینک لیز', thirdParty:'کسی اور کی (کمیشن)',
-    commission:'کمیشن', ownerShare:'مالک کا حصہ',
-    lateFee:'دیر کی جرمانہ', extraKm:'اضافی کلومیٹر کا خرچہ',
-    agreement:'کرایہ معاہدہ', damage:'نقصان',
-    available:'خالی', rented:'کرائے پر', maintenance:'مرمت میں'
-  }
-};
-// Registry mein merge karne ka tareeqa (E1 ka LANG object load ho chuka ho):
-if (typeof LANG !== 'undefined') {
-  Object.keys(CAR_LANG_KEYS).forEach(l => {
-    if (LANG[l]) Object.assign(LANG[l], CAR_LANG_KEYS[l]);
-  });
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 2 — CAR RENTAL CORE PRINT
-   ───────────────────────────────────────────────────────────────────────── */
-
-const CAR_RENTAL_CORE = {
-  id: 'carRental',
-  labelKey: 'carRental',
-  version: 1,
-  bornFrom: null,
-  icon: '🚗',
-
-  vocab: {
-    customer: 'renter',      // Restaurant mein "customer", yahan "renter"
-    order:    'booking',     // "order" nahi — booking
-    item:     'vehicle',     // "item" nahi — vehicle
-    supplier: 'vehicleOwner' // third-party gaRi ka malik supplier ki tarah
-  },
-
-  /* Sirf yeh do — self-drive aur chauffeur. Naam par udhaar (Restaurant
-     jaisa) yahan bhi wahi usool hai: naam nahi to udhaar nahi. */
-  orderTypes: [
-    { id:'selfDrive', labelKey:'selfDrive', nameRequired:true },
-    { id:'chauffeur',  labelKey:'chauffeur',  nameRequired:true }
-  ],
-  // Walk-in par bhi naam LAZMI — Muhammad ka saaf hukum. Restaurant mein
-  // Walk-in Customer chal jata tha; yahan chalta hi nahi.
-  walkinAllowed: false,
-
-  entities: ['renters','vehicles','bookings','vehicleOwners',
-             'purchases','expenses','payments','journal','coa','staffUsers','loans'],
-
-  tabs:           ['dashboard','bookings','vehicles','maintenance',
-                   'expenses','renters','reports','settings'],
-  tabOrder:       ['dashboard','bookings','vehicles','maintenance',
-                   'expenses','renters','reports','settings'],
-  dashboardCards: ['todayBookings','vehiclesOut','vehiclesAvailable','duePayments'],
-  quickActions:   ['newBooking','newExpense','receivePayment'],
-
-  modules: {
-    default:  ['coa','pnlSimple'],
-    optional: ['thirdPartyVehicles','bankLease','depreciation',
-               'lateFeePolicy','mileageCap','whatsappBill','rentalAgreement','taxiMode']
-  },
-
-  cogsMethod: null,   // Car Rental mein COGS jaisi cheez nahi — restaurant-specific tha
-
-  rules: {
-    walkInCredit:    false,   // isi liye walkin khud hi ijazat nahi
-    payMethodField:  false,
-    negativeStock:   false,
-    editAfterPost:   false,
-    doubleBooking:   false,   // sab se ahem — ek gaRi do jagah kabhi nahi
-    depositIsLiability: true  // security deposit AAMDANI nahi, wapas dena hai
-  },
-
-  payment: {
-    fields: ['bill','received'],
-    due: 'bill - received',
-    partialAllowedWhen: 'customer.named'   // yahan hamesha true hai (naam lazmi)
-  },
-
-  /* ASAL khaate — Cheema/Basha ke COA mein pehle se leak paye gaye,
-     matlab ek purana Car Rental system inhi ko istemal kar chuka hai. */
-  coa: [
-    { code:'1000', name:'Cash',                              type:'Asset' },
-    { code:'1010', name:'Bank',                               type:'Asset' },
-    { code:'1100', name:'Accounts Receivable',                type:'Asset' },
-    { code:'1300', name:'Vehicles (Fixed Assets)',            type:'Asset' },
-    { code:'1301', name:'Accumulated Depreciation — Vehicles',type:'Asset' },  // contra-asset, ulta chalta hai
-    { code:'2000', name:'Accounts Payable',                   type:'Liability' },
-    { code:'2100', name:'Security Deposits Held',             type:'Liability' },
-    { code:'2200', name:'Vehicle Loan Payable',               type:'Liability' },
-    { code:'2300', name:'Payable to Vehicle Owners (Third-Party)', type:'Liability' },
-    { code:'3000', name:"Owner's Capital",                    type:'Equity' },
-    { code:'3100', name:"Owner's Drawings",                   type:'Equity' },
-    { code:'3200', name:'Retained Earnings',                  type:'Equity' },
-    { code:'3900', name:'Opening Balance Equity',             type:'Equity' },
-    { code:'3950', name:'Profit & Loss Summary',              type:'Equity' },
-    { code:'4000', name:'Rental Income',                      type:'Income' },
-    { code:'4050', name:'Taxi Trip Income',                    type:'Income' },
-    { code:'4200', name:'Commission Income (Third-Party Vehicles)', type:'Income' },
-    { code:'4900', name:'Late Fee / Extra KM Income',         type:'Income' },
-    { code:'5100', name:'Rent Expense',                       type:'Expense' },
-    { code:'5150', name:'Vehicle Lease Rent Expense',         type:'Expense' },
-    { code:'5200', name:'Utilities Expense',                  type:'Expense' },
-    { code:'5300', name:'Salaries Expense',                   type:'Expense' },
-    { code:'5400', name:'Fuel Expense',                       type:'Expense' },
-    { code:'5450', name:'Maintenance Expense',                type:'Expense' },
-    { code:'5500', name:'Insurance Expense',                  type:'Expense' },
-    { code:'5900', name:'Miscellaneous Expense',              type:'Expense' },
-    { code:'5990', name:'Depreciation Expense',               type:'Expense' },
-    { code:'5995', name:'Interest Expense (Vehicle Loan)',    type:'Expense' }
-  ],
-
-  expenseHeads: ['Rent','Utilities','Salaries','Fuel','Maintenance','Insurance','Miscellaneous'],
-
-  reports:   ['dailyBookings','pnl','ledger','vehicleUtilization','ownerPayouts','taxiEarnings'],
-  numbering: { order:'{YY}{MM}-{####}' },
-
-  defaults:  { lang:'ro', currency:'PKR' }
-};
-
-const CAR_RENTAL_MODULES = {
-  // Restaurant ka 'pnl' module cogsPeriodic maangta hai (COGS ka concept
-  // Car Rental mein hai hi nahi). Isi liye apna simple pnl module.
-  pnlSimple: { id:'pnlSimple', tier:'basic', needs:['coa'], touches:[], adds:{ reports:['pnl'] } },
-
-  /* TAXI MODE — booking se bilkul alag cheez.
-     Booking: tareekhon ka waqfa, CNIC/license, security deposit, gaRi
-     "rented" ho jati hai, double-booking rukti hai.
-     Taxi:    ek gaRi par shift lagti hai, phir usi gaRi par ek ke baad ek
-     trip log hote hain — sirf kiraya aur location. Naam/number lazmi
-     nahi kyunki udhaar hota hi nahi (meter ka paisa foran milta hai —
-     naam ka usool sirf udhaar rokne ke liye tha, yahan zaroorat hi nahi).
-     GaRi 'rented' nahi hoti, kyunki din bhar usi gaRi par kai trip lagte
-     hain — yeh double-booking wali soorat hi nahi. */
-  taxiMode: {
-    id:'taxiMode', tier:'basic', needs:[], touches:['journal'],
-    adds:{ accounts:['4050'], tabs:['taxi'] }
-  },
-
-  thirdPartyVehicles: {
-    id:'thirdPartyVehicles', tier:'basic', needs:[], touches:['booking','journal'],
-    adds:{ accounts:['2300','4200'], fields:{ vehicles:['ownerName','commissionPct'] } }
-  },
-  bankLease: {
-    id:'bankLease', tier:'advanced', needs:['coa'], touches:['journal'],
-    adds:{ accounts:['2200','5995'], fields:{ vehicles:['loanId'] } }
-    // EMI ka hisaab E7 ke addLoan/payInstallment se — dobara nahi likha
-  },
-  depreciation: {
-    id:'depreciation', tier:'advanced', needs:['coa'], touches:['journal'],
-    adds:{ accounts:['1301','5990'], fields:{ vehicles:['purchaseDate','usefulLifeMonths','cost'] } }
-  },
-  lateFeePolicy: {
-    id:'lateFeePolicy', tier:'basic', needs:[], touches:['booking'],
-    adds:{ accounts:['4900'], fields:{ bookings:['lateFee'] } }
-  },
-  mileageCap: {
-    id:'mileageCap', tier:'basic', needs:[], touches:['booking'],
-    adds:{ fields:{ vehicles:['dailyKmCap','perKmRate'], bookings:['startKm','endKm'] } }
-  },
-  whatsappBill: {
-    id:'whatsappBill', tier:'basic', needs:[], touches:[],
-    adds:{ fields:{ renters:['phone'] } }, affectsAccounts:false
-  },
-  rentalAgreement: {
-    id:'rentalAgreement', tier:'basic', needs:[], touches:[],
-    adds:{ fields:{ bookings:['cnic','license'] } }, affectsAccounts:false
-  }
-};
-
-if (typeof COREPRINTS !== 'undefined') COREPRINTS.carRental = CAR_RENTAL_CORE;
-if (typeof MODULES !== 'undefined') Object.assign(MODULES, CAR_RENTAL_MODULES);
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 3 — VEHICLE: TEEN OWNERSHIP QISMEIN
-   Muhammad ka sawal: gaRi apni, ya bank lease par, ya kisi aur ki
-   (commission par). Teenon ek hi entity mein, `ownership` field faisla
-   karta hai ke COA mein kaunsa raasta chalega.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function addVehicle(client, session, v) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  if (!v.reg) throw new Error('Registration number chahiye');
-  if ((client.vehicles||[]).some(x => x.reg === v.reg))
-    throw new Error('Yeh registration number pehle se maujood hai');
-  if (!['owned','leased','thirdParty'].includes(v.ownership))
-    throw new Error('Ownership: owned, leased, ya thirdParty hona chahiye');
-  if (v.ownership === 'thirdParty' && !v.ownerName)
-    throw new Error('Third-party gaRi ke liye malik ka naam chahiye');
-  if (v.ownership === 'thirdParty' && (v.commissionPct == null || v.commissionPct < 0 || v.commissionPct > 100))
-    throw new Error('Commission % 0 se 100 ke darmiyan hona chahiye');
-
-  const rec = {
-    reg: v.reg, make: v.make||'', model: v.model||'', year: v.year||null,
-    ownership: v.ownership,
-    dailyRate: Number(v.dailyRate)||0,
-    status: 'available',
-    ownerName: v.ownership==='thirdParty' ? v.ownerName : null,
-    commissionPct: v.ownership==='thirdParty' ? Number(v.commissionPct) : null,
-    purchaseDate: v.purchaseDate || null,
-    cost: Number(v.cost)||0,
-    usefulLifeMonths: Number(v.usefulLifeMonths)||60,
-    loanId: v.loanId || null,
-    dailyKmCap: v.dailyKmCap!=null ? Number(v.dailyKmCap) : null,
-    perKmRate: Number(v.perKmRate)||0
-  };
-  client.vehicles = client.vehicles || [];
-  client.vehicles.push(rec);
-
-  // Third-party gaRi client ke apne asset mein NAHI aati — client us ki
-  // malik nahi. Sirf owned/leased gaRi asset banti hai.
-  const J = [];
-  if (v.ownership !== 'thirdParty' && rec.cost > 0) {
-    const at = (v.purchaseDate || localToday()) + 'T00:00:00Z';
-    J.push({ account:'1300', dr:rec.cost, cr:0, at, ref:'VEH-'+v.reg, desc:'Gari kharidi: '+v.reg });
-    if (v.ownership === 'owned') {
-      J.push({ account: v.paidFrom||'1000', dr:0, cr:rec.cost, at, ref:'VEH-'+v.reg });
-    }
-    // 'leased' soorat mein credit side addLoan() khud karega (bank lease)
-  }
-  J.forEach(l => client.journal.push(l));
-  rec.journalLines = J;   // taake app.js cloud queue mein bhej sake
-  return rec;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 4 — DOUBLE-BOOKING KA PEHRA
-   Sab se pehli zaroorat jo Muhammad ne khud car-rental ke gaps mein
-   "sab se zaroori" likha tha. Ek gaRi do jagah kabhi nahi.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function overlaps(aStart, aEnd, bStart, bEnd) {
-  return aStart < bEnd && bStart < aEnd;   // half-open interval
-}
-
-function vehicleIsFree(client, reg, pickup, dropoff, excludeBookingId) {
-  const bookings = (client.bookings || []).filter(b =>
-    b.vehicleReg === reg && b.status !== 'cancelled' && b.id !== excludeBookingId);
-  return !bookings.some(b => overlaps(pickup, dropoff, b.pickup, b.dropoff));
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 5 — BOOKING BANANA
-   CNIC/license: form mein string ke taur par rakhe jate hain — camera se
-   ID card scan karna aur cheez ka kaam hai (upload/OCR), yahan sirf woh
-   nateeja (naam, CNIC number, license number) store hota hai.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function buildBooking(ui, client, session, { vehicleReg, renterName, cnic, license,
-                                              orderType, pickup, dropoff, dailyRate,
-                                              deposit, startKm, cnicPhoto }) {
-  gateEntity('bookings');
-
-  if (!renterName || !renterName.trim())
-    throw new Error('Naam lazmi hai — Walk-in yahan qubool nahi');
-
-  const v = (client.vehicles||[]).find(x => x.reg === vehicleReg);
-  if (!v) throw new Error('Gari nahi mili: ' + vehicleReg);
-  if (v.status === 'maintenance') throw new Error('Yeh gari marammat mein hai');
-
-  if (!vehicleIsFree(client, vehicleReg, pickup, dropoff))
-    throw new Error('Yeh gari in tareekhon mein pehle se book hai');
-
-  const days = Math.max(1, Math.ceil((new Date(dropoff) - new Date(pickup)) / 86400000));
-  const rate = Number(dailyRate) || v.dailyRate;
-  const bill = days * rate;
-  const dep  = Number(deposit) || 0;
-
-  return {
-    id: nextOrderId(client, session),
-    at: new Date().toISOString(),
-    vehicleReg, renterName: renterName.trim(),
-    cnic: cnic||'', license: license||'',
-    orderType, pickup, dropoff, days, dailyRate: rate,
-    startKm: Number(startKm)||0, endKm: null,
-    deposit: dep, bill, received: 0, extraCharges: 0,
-    status: 'confirmed'
-  };
-}
-
-function postBooking(client, booking) {
-  const v = (client.vehicles||[]).find(x => x.reg === booking.vehicleReg);
-  const J = [];
-  const at = booking.at;
-
-  // Security deposit — AAMDANI NAHI. Liability, wapas dena hai.
-  if (booking.deposit > 0) {
-    J.push({ account:'1000', dr:booking.deposit, cr:0, at, ref:booking.id, desc:'Security deposit' });
-    J.push({ account:'2100', dr:0, cr:booking.deposit, at, ref:booking.id, party:booking.renterName });
-  }
-
-  // Kiraya khud booking confirm hote hi nahi banta — jab bill hoti hai
-  // (checkout par) tab. Yahan sirf booking record + gaRi "rented" hoti hai.
-  v.status = 'rented';
-  client.bookings = client.bookings || [];
-  client.bookings.push(booking);
-  J.forEach(l => client.journal.push(l));
-  return J;
-}
-
-/* Checkout — asal kiraya yahan banta hai, third-party ho to commission
-   khud bant jata hai. */
-function checkoutBooking(client, session, bookingId, { endKm, damage=0, received }) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  const b = (client.bookings||[]).find(x => x.id === bookingId);
-  if (!b) throw new Error('Booking nahi mili');
-  if (b.status === 'completed') throw new Error('Yeh booking pehle se band hai');
-
-  const v = (client.vehicles||[]).find(x => x.reg === b.vehicleReg);
-  const at = new Date().toISOString();
-  const J = [];
-
-  // Extra KM
-  let extraKm = 0, extraKmCharge = 0;
-  if (v.dailyKmCap != null && endKm != null) {
-    const allowed = v.dailyKmCap * b.days;
-    const used = endKm - b.startKm;
-    extraKm = Math.max(0, used - allowed);
-    extraKmCharge = extraKm * (v.perKmRate||0);
-  }
-
-  const lateFee = Number(b.lateFee)||0;
-  const baseBill = b.bill;                       // asal kiraya — extra se PEHLE
-  const totalBill = baseBill + extraKmCharge + lateFee;
-  const got = received != null ? Number(received) : totalBill;
-  if (got > totalBill + 0.5) throw new Error('Wasool bill se zyada nahi ho sakta');
-
-  b.endKm = endKm; b.extraCharges = extraKmCharge + lateFee;
-  b.bill = totalBill; b.received = got; b.status = 'completed';
-  v.status = damage > 0 ? 'maintenance' : 'available';
-
-  // Naqd/udhaar
-  if (got > 0) J.push({ account:'1000', dr:got, cr:0, at, ref:b.id, party:b.renterName });
-  const due = totalBill - got;
-  if (due > 0) J.push({ account:'1100', dr:due, cr:0, at, ref:b.id, party:b.renterName });
-
-  // Income — asal kiraya (baseBill) par. Extra KM/late fee 4900 mein
-  // ALAG jata hai — isi ko 4000/commission mein DOBARA na gina jaye,
-  // warna Dr/Cr mel nahi khate the (jaanch ne yeh pakRa).
-  if (v.ownership === 'thirdParty') {
-    const comm = Math.round(baseBill * (v.commissionPct/100) * 100) / 100;
-    const ownerShare = Math.round((baseBill - comm) * 100) / 100;
-    J.push({ account:'4200', dr:0, cr:comm, at, ref:b.id, desc:'Commission' });
-    J.push({ account:'2300', dr:0, cr:ownerShare, at, ref:b.id, party:v.ownerName, desc:'Malik ka hissa' });
-  } else {
-    J.push({ account:'4000', dr:0, cr:baseBill, at, ref:b.id });
-  }
-  if (extraKmCharge + lateFee > 0)
-    J.push({ account:'4900', dr:0, cr:extraKmCharge+lateFee, at, ref:b.id });
-
-  // Security deposit wapas — jitna bacha (nuqsan kaat kar)
-  if (b.deposit > 0) {
-    const refund = Math.max(0, b.deposit - damage);
-    J.push({ account:'2100', dr:b.deposit, cr:0, at, ref:b.id, party:b.renterName });
-    if (refund > 0) J.push({ account:'1000', dr:0, cr:refund, at, ref:b.id, party:b.renterName });
-    if (damage > 0) J.push({ account:'4900', dr:0, cr:damage, at, ref:b.id, desc:'Nuqsan deposit se kaata' });
-  }
-
-  const dr = J.reduce((s,x)=>s+x.dr,0), cr = J.reduce((s,x)=>s+x.cr,0);
-  if (Math.abs(dr-cr) > 0.01) throw new Error('Checkout journal barabar nahi: ' + dr + ' vs ' + cr);
-
-  J.forEach(l => client.journal.push(l));
-  return { booking:b, lines:J, extraKm, extraKmCharge, lateFee };
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 6 — DEPRECIATION (purchase date se, model year se nahi)
-   Muhammad ka pakRa hua gap: purani app model year se depreciation
-   chalati thi. Sahi tareeqa: jis din gaRi kharidi/istemal shuru hui,
-   wahi se ginti.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function monthsBetween(a, b) {
-  const [ay,am] = a.split('-').map(Number), [by,bm] = b.split('-').map(Number);
-  return (by-ay)*12 + (bm-am);
-}
-
-function monthlyDepreciation(vehicle) {
-  if (!vehicle.cost || !vehicle.usefulLifeMonths) return 0;
-  return Math.round((vehicle.cost / vehicle.usefulLifeMonths) * 100) / 100;
-}
-
-function postDepreciation(client, session, asOfMonth /* 'YYYY-MM' */) {
-  if (!session.canWriteAccounts) throw new Error('Ijazat nahi');
-  const done = [];
-  (client.vehicles||[]).forEach(v => {
-    if (v.ownership === 'thirdParty' || !v.purchaseDate) return;   // client ka asset nahi
-    const purchaseMonth = v.purchaseDate.slice(0,7);
-    const elapsed = monthsBetween(purchaseMonth, asOfMonth);
-    if (elapsed < 0 || elapsed >= v.usefulLifeMonths) return;      // shuru na hui / poori ho chuki
-
-    const ref = 'DEP-' + v.reg + '-' + asOfMonth;
-    if ((client.journal||[]).some(j => j.ref === ref)) return;     // dobara nahi (idempotent)
-
-    const amt = monthlyDepreciation(v);
-    if (amt <= 0) return;
-    const at = asOfMonth + '-28T00:00:00Z';
-    client.journal.push({ account:'5990', dr:amt, cr:0, at, ref, desc:'Depreciation — '+v.reg });
-    client.journal.push({ account:'1301', dr:0, cr:amt, at, ref });
-    done.push({ reg:v.reg, amount:amt });
-  });
-  return done;
-}
-
-function vehicleBookValue(client, vehicle, asOfDate) {
-  const accCode = '1301';
-  const dep = (client.journal||[])
-    .filter(j => j.account === accCode && j.ref && j.ref.startsWith('DEP-'+vehicle.reg))
-    .filter(j => !asOfDate || dayOf(j.at) <= asOfDate)
-    .reduce((s,j) => s + (Number(j.cr)||0) - (Number(j.dr)||0), 0);
-  return Math.round((vehicle.cost - dep) * 100) / 100;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 7 — BANK LEASE (E7 ke loan machinery ka istemal — dobara nahi likha)
-   Vehicle ko `addLoan`/`payInstallment` (E7) se joRne ka pul.
-   ───────────────────────────────────────────────────────────────────────── */
-
-function financeVehicleWithLoan(client, session, vehicleReg, loanTerms) {
-  const v = (client.vehicles||[]).find(x => x.reg === vehicleReg);
-  if (!v) throw new Error('Gari nahi mili');
-  if (v.ownership !== 'leased') throw new Error('Sirf "leased" gaRi par loan lagta hai');
-  if (typeof addLoan !== 'function') throw new Error('Loan module (E7) load nahi hua');
-
-  // Vehicle asset pehle hi addVehicle() mein 1300 Dr ho chuka; yahan sirf
-  // credit side (2200 Vehicle Loan Payable) — E7 ka addLoan '2150' default
-  // deta hai, hum '2200' bhejte hain taake Car Rental ka apna khaata use ho.
-  const loan = addLoan(client, session, Object.assign({}, loanTerms, {
-    name: loanTerms.name || (v.ownerName||'Bank') + ' — ' + vehicleReg,
-    account: '2200',
-    into: null   // gaRi ka asset pehle se dr ho chuka — dobara cash mein nahi aana
-  }));
-  // addLoan khud '2200' Cr aur 'into' Dr karta hai; 'into:null' se cash
-  // side galat na bane — is liye seedha journal se sirf loan liability CR:
-  // (addLoan ki 'into' entry hata kar sirf payable wali line rakhte hain)
-  const stray = client.journal.filter(j => j.ref === 'LOAN' && j.party === loan.name && j.account !== '2200');
-  stray.forEach(j => { const i = client.journal.indexOf(j); if (i>=0) client.journal.splice(i,1); });
-
-  v.loanId = loan.id;
-  return loan;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 8 — WHATSAPP BILL + RENTAL AGREEMENT (matn, seedha bhejne ke liye)
-   ───────────────────────────────────────────────────────────────────────── */
-
-function bookingBillText(client, booking) {
-  const v = (client.vehicles||[]).find(x => x.reg === booking.vehicleReg) || {};
-  const L = [];
-  L.push('*' + (client.name||'') + '*');
-  L.push('Booking ' + booking.id + '  ·  ' + booking.vehicleReg + ' (' + (v.make||'') + ' ' + (v.model||'') + ')');
-  L.push('');
-  L.push(booking.pickup + ' se ' + booking.dropoff + '  (' + booking.days + ' din)');
-  L.push('Roz ka kiraya: Rs ' + booking.dailyRate);
-  if (booking.extraCharges > 0) L.push('Extra charges: Rs ' + booking.extraCharges);
-  L.push('*Bill: Rs ' + booking.bill + '*');
-  L.push('Wasool: Rs ' + booking.received);
-  const due = booking.bill - booking.received;
-  if (due > 0) L.push('*Bakaya: Rs ' + due + '*');
-  if (booking.deposit > 0) L.push('Security deposit: Rs ' + booking.deposit);
-  L.push('');
-  L.push('Shukriya.');
-  return L.join('\n');
-}
-
-function rentalAgreementText(client, booking) {
-  const v = (client.vehicles||[]).find(x => x.reg === booking.vehicleReg) || {};
-  const L = [];
-  L.push((client.name||'') + ' — RENTAL AGREEMENT');
-  L.push('Booking: ' + booking.id);
-  L.push('');
-  L.push('Renter: ' + booking.renterName);
-  L.push('CNIC: ' + (booking.cnic||'—'));
-  L.push('License: ' + (booking.license||'—'));
-  L.push('');
-  L.push('Vehicle: ' + booking.vehicleReg + ' — ' + (v.make||'') + ' ' + (v.model||'') + ' ' + (v.year||''));
-  L.push('Mode: ' + booking.orderType);
-  L.push('Period: ' + booking.pickup + ' to ' + booking.dropoff + ' (' + booking.days + ' din)');
-  L.push('Daily rate: Rs ' + booking.dailyRate);
-  L.push('Security deposit: Rs ' + booking.deposit);
-  if (v.dailyKmCap != null) L.push('Mileage cap: ' + v.dailyKmCap + ' km/day, extra @ Rs ' + v.perKmRate + '/km');
-  L.push('');
-  L.push('Signature (Renter): ______________');
-  L.push('Signature (' + (client.name||'Company') + '): ______________');
-  return L.join('\n');
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 9 — JAANCH
-   ───────────────────────────────────────────────────────────────────────── */
-
-function auditCarRental(client) {
-  const p = [];
-  (client.vehicles||[]).forEach(v => {
-    if (v.ownership === 'thirdParty' && !v.ownerName) p.push('Third-party gaRi ' + v.reg + ' ka malik ka naam nahi');
-    if (v.ownership !== 'thirdParty' && v.cost > 0 && !v.purchaseDate)
-      p.push('Gari ' + v.reg + ' ki purchase date nahi — depreciation ghalat hogi');
-  });
-  // double-booking khud check (safety net — buildBooking bhi rokta hai)
-  const byVeh = {};
-  (client.bookings||[]).filter(b=>b.status!=='cancelled').forEach(b => {
-    (byVeh[b.vehicleReg] = byVeh[b.vehicleReg] || []).push(b);
-  });
-  Object.entries(byVeh).forEach(([reg, list]) => {
-    for (let i=0;i<list.length;i++) for (let j=i+1;j<list.length;j++)
-      if (overlaps(list[i].pickup,list[i].dropoff,list[j].pickup,list[j].dropoff))
-        p.push('DOUBLE BOOKING: ' + reg + ' — ' + list[i].id + ' aur ' + list[j].id);
-  });
-  return p;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   HISSA 10 — TAXI MODE
-   ───────────────────────────────────────────────────────────────────────── */
-
-/* GaRi PEHLE SE chuni hui — shift lagao, phir har trip usi gaRi par jata
-   hai jab tak shift band na ho. Ek waqt mein ek gaRi par ek hi shift. */
-function startTaxiShift(client, session, vehicleReg) {
-  if (!hasModule(ui, 'taxiMode')) throw new Error('Taxi mode chaalu nahi');
-  const v = (client.vehicles||[]).find(x => x.reg === vehicleReg);
-  if (!v) throw new Error('Gari nahi mili: ' + vehicleReg);
-  if (v.status === 'maintenance') throw new Error('Yeh gari marammat mein hai');
-  if (v.status === 'rented') throw new Error('Yeh gari abhi ek booking mein hai — taxi shift nahi lag sakti');
-
-  client.activeTaxiShifts = client.activeTaxiShifts || {};
-  if (client.activeTaxiShifts[vehicleReg])
-    throw new Error('Is gari ki shift pehle se chalu hai');
-
-  client.activeTaxiShifts[vehicleReg] = { startedAt: new Date().toISOString(), by: session.role };
-  return client.activeTaxiShifts[vehicleReg];
-}
-
-function endTaxiShift(client, session, vehicleReg) {
-  client.activeTaxiShifts = client.activeTaxiShifts || {};
-  delete client.activeTaxiShifts[vehicleReg];
-}
-
-function isTaxiShiftActive(client, vehicleReg) {
-  return !!((client.activeTaxiShifts||{})[vehicleReg]);
-}
-
-/* Ek trip. Naam/number dono OPTIONAL — udhaar yahan hai hi nahi, poora
-   kiraya foran wasool hota hai. Number ho to WhatsApp bill bhejna bhi
-   khud-ba-khud lazmi nahi — sirf mauqa milta hai. */
-function logTaxiTrip(client, session, { vehicleReg, fare, location, renterName, phone }) {
-  if (!session.canWriteAccounts && session.role !== 'orderTaker')
-    throw new Error('Ijazat nahi');
-  const v = (client.vehicles||[]).find(x => x.reg === vehicleReg);
-  if (!v) throw new Error('Gari nahi mili: ' + vehicleReg);
-
-  const f = Math.round((Number(fare)||0) * 100) / 100;
-  if (f <= 0) throw new Error('Kiraya likhein');
-
-  const at = new Date().toISOString();
-  // Sirf Date.now() par fallback collision-prone hai — jaanch ne isi qism
-  // ka bug supplier-payment mein pehle pakRa tha (usi millisecond mein
-  // do adaigiyan → ek hi ID). Isi liye ENGINE KE APNE counter se bhi
-  // hamesha unique — app.js ke newRef() par munhasir nahi.
-  client._taxiSeq = (client._taxiSeq || 0) + 1;
-  const id = (typeof newRef === 'function')
-    ? newRef('TAXI')
-    : 'TAXI-' + Date.now().toString(36) + '-' + client._taxiSeq;
-
-  const trip = {
-    id, vehicleReg, at, fare: f,
-    location: location || '',
-    renterName: renterName || '',     // khali chal sakta hai
-    phone: phone || ''                // khali chal sakta hai
-  };
-
-  const J = [];
-  if (v.ownership === 'thirdParty') {
-    const comm = Math.round(f * (v.commissionPct/100) * 100) / 100;
-    const ownerShare = Math.round((f - comm) * 100) / 100;
-    J.push({ account:'1000', dr:f, cr:0, at, ref:id, desc:'Taxi trip — '+vehicleReg });
-    J.push({ account:'4050', dr:0, cr:comm, at, ref:id, desc:'Taxi commission' });
-    J.push({ account:'2300', dr:0, cr:ownerShare, at, ref:id, party:v.ownerName, desc:'Malik ka hissa (taxi)' });
-  } else {
-    J.push({ account:'1000', dr:f, cr:0, at, ref:id, desc:'Taxi trip — '+vehicleReg });
-    J.push({ account:'4050', dr:0, cr:f, at, ref:id });
-  }
-  const dr = J.reduce((s,x)=>s+x.dr,0), cr = J.reduce((s,x)=>s+x.cr,0);
-  if (Math.abs(dr-cr) > 0.01) throw new Error('Taxi trip journal barabar nahi');
-
-  client.taxiTrips = client.taxiTrips || [];
-  client.taxiTrips.push(trip);
-  J.forEach(l => client.journal.push(l));
-  trip.journalLines = J;   // taake app.js cloud queue mein bhej sake
-  return trip;
-}
-
-/* GaRi ki kul kamai — poori (gross) aur company ka hissa alag alag,
-   taake third-party gaRi ka commission bhi saaf nazar aaye. */
-function vehicleTaxiEarnings(client, vehicleReg, from, to) {
-  const v = (client.vehicles||[]).find(x => x.reg === vehicleReg);
-  const trips = (client.taxiTrips||[]).filter(t => t.vehicleReg === vehicleReg
-    && (!from || dayOf(t.at) >= from) && (!to || dayOf(t.at) <= to));
-
-  const gross = Math.round(trips.reduce((s,t)=>s+t.fare,0) * 100) / 100;
-  const companyShare = v && v.ownership === 'thirdParty'
-    ? Math.round(gross * (v.commissionPct/100) * 100) / 100
-    : gross;
-
-  return { vehicleReg, trips: trips.length, gross, companyShare,
-           ownerShare: Math.round((gross - companyShare)*100)/100 };
-}
-
-function taxiTripText(client, trip) {
-  const v = (client.vehicles||[]).find(x => x.reg === trip.vehicleReg) || {};
-  const L = [];
-  L.push('*' + (client.name||'') + '*');
-  L.push('Taxi — ' + trip.vehicleReg + ' (' + (v.make||'') + ' ' + (v.model||'') + ')');
-  if (trip.location) L.push('Location: ' + trip.location);
-  L.push('*Kiraya: Rs ' + trip.fare + '*');
-  L.push('');
-  L.push('Shukriya.');
-  return L.join('\n');
-}
-</script>
-<script>/* =========================================================================
-   HF SOLUTIONS — CLOUD
-   =========================================================================
-   E5 ka contract yahan Supabase par lagta hai:
-     readBlob        → hf_clients se
-     writeBlobIfRev  → hf_write_blob() — TAALE ke saath
-     upsertRow       → hf_entries mein (sirf barhti hain)
-     listOrderIds    → counter bahal karne ke liye
-
-   ANDHA UPSERT KA RAASTA YAHAN HAI HI NAHI. Blob hamesha rev ke saath
-   likha jata hai. Kisi aur ne beech mein likha ho to parh kar, mila kar,
-   dobara likha jata hai — us ka kaam mitaya nahi jata.
-
-   Internet na ho to sab kuch phone par chalta rehta hai. Signal aate hi
-   OUTBOX khud chala jata hai.
-   ========================================================================= */
-
-// Hf Solutions project (jfzcevknhgexowvligjd) — Supabase se khud tasdeeq shuda.
-// (Pehle yahan acwwwvdnbfyykugcsoak tha — woh Alsayyam project hai, jo BAND
-//  hai. App kabhi jur hi nahi sakti thi.)
-const SUPA_URL  = 'https://jfzcevknhgexowvligjd.supabase.co';
-const SUPA_KEY  = 'sb_publishable_beEoYRGun96-gPMeglQLXQ_jWCYc1aP';
-
-let sb = null, session = null, cloudOn = false;
-
-function initCloud(){
-  try{
-    if(typeof supabase === 'undefined') return false;
-    // Apni alag jagah — Admin aur Client ka session kabhi ek doosre se
-    // na mile, chahe ek hi browser mein dono khulen.
-    sb = supabase.createClient(SUPA_URL, SUPA_KEY, {
-      auth:{ persistSession:true, autoRefreshToken:true, storage: localStorage,
-             storageKey:'hf-client-auth' }
-    });
-    return true;
-  }catch(e){ return false; }
-}
-
-/* ---- sync ka nishaan ---- */
-function setSync(state, msg){
-  const d = $('syncdot'); if(!d) return;
-  d.className = 'syncdot ' + state;        // '' | 'ok' | 'off'
-  $('syncmsg').textContent = msg;
-}
-
-/* ---- E5 ka db object ---- */
-const DB = {
-  async readBlob(id){
-    const { data, error } = await sb.from('hf_clients')
-      .select('data,rev').eq('id', id).maybeSingle();
-    if(error) throw new Error(error.message);
-    if(!data) return { data:null, rev:0 };
-    return { data:data.data, rev:data.rev };
-  },
-
-  async writeBlobIfRev(id, blob, rev){
-    const { data, error } = await sb.rpc('hf_write_blob',
-      { p_id:id, p_data:blob, p_rev:rev });
-    if(error) throw new Error(error.message);
-    const r = Array.isArray(data) ? data[0] : data;
-    return { ok:!!r.ok, rev:r.rev, data:r.data };
-  },
-
-  async upsertRow(kind, row){
-    const { error } = await sb.from('hf_entries').upsert({
-      id: row.id, client_id: row.client_id, kind: kind,
-      data: row.data, at: row.at
-    }, { onConflict:'id' });
-    if(error) throw new Error(error.message);
-    return { ok:true };
-  },
-
-  async listOrderIds(clientId){
-    const { data, error } = await sb.from('hf_entries')
-      .select('id').eq('client_id', clientId).eq('kind','orders');
-    if(error) throw new Error(error.message);
-    return (data||[]).map(r => r.id);
-  },
-
-  /* Car Rental: booking ka WAHID raasta — hf_create_booking() khud
-     database ki satah par overlap rok deta hai (GIST exclusion
-     constraint). Client ki JS par bharosa nahi. */
-  async createBooking(clientId, booking){
-    const { data, error } = await sb.rpc('hf_create_booking', {
-      p_id: booking.id, p_client_id: clientId, p_vehicle_reg: booking.vehicleReg,
-      p_pickup: booking.pickup, p_dropoff: booking.dropoff, p_data: booking
-    });
-    if(error) throw new Error(error.message);
-    const r = Array.isArray(data) ? data[0] : data;
-    return { ok: !!r.ok, reason: r.reason };
-  },
-
-  async cancelBooking(clientId, bookingId){
-    const { data, error } = await sb.rpc('hf_cancel_booking', { p_id: bookingId, p_client_id: clientId });
-    if(error) throw new Error(error.message);
-    const r = Array.isArray(data) ? data[0] : data;
-    return { ok: !!r.ok };
-  },
-
-  async pullEntries(clientId, since){
-    let q = sb.from('hf_entries').select('id,kind,data,at').eq('client_id', clientId);
-    if(since) q = q.gt('at', since);
-    const { data, error } = await q.order('at',{ascending:true}).limit(5000);
-    if(error) throw new Error(error.message);
-    return data || [];
-  }
-};
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   LOGIN
-   ───────────────────────────────────────────────────────────────────────── */
-
-/* Username → Supabase ka email.
-   Supabase sirf email maangta hai, magar client ko email ki zaroorat nahi.
-   "cheema" likha jaye to andar "cheema@hfsolutions.app" ban jata hai.
-   Poora email likha jaye (jaise aap ka apna) to wahi chalta hai.
-   Yeh address kabhi email bhejne ke kaam nahi aata — user "Auto Confirm"
-   se banta hai, aur password bhoolne par admin Supabase se naya rakhta hai. */
-const LOGIN_DOMAIN = 'hfsolutions.app';
-function loginEmail(raw){
-  const v = String(raw||'').trim().toLowerCase();
-  if(!v) return '';
-  return v.includes('@') ? v : v.replace(/\s+/g,'') + '@' + LOGIN_DOMAIN;
-}
-
-async function doLogin(){
-  const email = loginEmail($('lg-email').value);
-  const pass  = String($('lg-pass').value||'');
-  if(!email || !pass){ $('lg-msg').textContent = 'Username aur password likhein'; return; }
-
-  $('lg-go').disabled = true;
-  $('lg-msg').textContent = 'Andar ja rahe hain…';
-  try{
-    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-    if(error) throw error;
-    session = data.session;
-    $('lg-msg').textContent = '';
-    await afterLogin();
-  }catch(e){
-    $('lg-msg').className = 'hint warn';
-    $('lg-msg').textContent = (e.message||'').includes('Invalid')
-      ? 'Username ya password theek nahi' : (e.message || 'Andar nahi ja sake');
-  }finally{ $('lg-go').disabled = false; }
-}
-
-async function afterLogin(){
-  cloudOn = true;
-  $('s-login').classList.remove('on');
-  $('app').style.display = '';
-  setSync('', 'jooR raha hoon…');
-  await bootCloud();
-}
-
-/* Logout se pehle sab kuch upload. Kuch reh jaye to batao — chupke se
-   mat nikalo. */
-async function doLogout(){
-  setSync('', 'bhej raha hoon…');
-  try{ await pushAll(); }catch(e){}
-  for(let i=0; i<10 && syncing; i++) await new Promise(r=>setTimeout(r,200));
-
-  const meri = OUTBOX.filter(j => c && j.clientId === c.id).length;
-  if(meri){
-    const ok = confirm(meri + ' entries abhi cloud par nahi gayin (internet?).\n\n' +
-      'Abhi logout kiya to yeh sirf is phone par rahengi, aur agli dafa ISI account se ' +
-      'login karne par jayengi.\n\nPhir bhi logout karein?');
-    if(!ok){ setSync('off', meri + ' baqi'); return; }
-  }
-  ACTIVE_CLIENT_ID = null;
-  try{ await sb.auth.signOut(); }catch(e){}
-  location.reload();
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   PEHLA MILAP — cloud aur phone ka data
-   ───────────────────────────────────────────────────────────────────────── */
-
-async function bootCloud(){
-  const uid = (session && session.user && session.user.id) || '';
-  const cid = 'c_' + uid.slice(0,8);          // is account ka client
-  ACTIVE_CLIENT_ID = cid;                     // KISI BHI flush se pehle
-
-  try{
-    const cloud = await DB.readBlob(cid);
-
-    /* AHEM: phone par para hua data sirf TAB istemal hoga jab woh ISI
-       account ka ho. Warna doosre client ka data naye account mein ghus
-       jata hai — test mein Cheema ka order Basha ko nazar aa gaya tha. */
-    const mera = (c && c.id === cid) ? c : null;
-    if(!mera && c) { c = null; try{ localStorage.removeItem(KEY); }catch(e){} }
-
-    if(!cloud.data){
-      // Cloud khali — pehli baar. Pehle dekho Admin ne parcha bana rakha hai.
-      const packet = await claimSetupPacket();
-      c = mera || freshClient(cid, packet && packet.name);
-      c.id = cid;
-      if(packet){
-        applySetupPacket(c, packet);
-        setSync('ok', 'Admin ka tayyar kiya hua catalog mil gaya');
-      }
-      const r = await DB.writeBlobIfRev(cid, blobOf(c), 0);
-      c.rev = r.rev;
-      setSync('ok','naya — cloud par chadh gaya');
-    }else{
-      // Cloud par maujood — sirf ISI account ka local data milao
-      const merged = mera ? mergeBlob(blobOf(mera), cloud.data) : cloud.data;
-      c = Object.assign(freshClient(cid, cloud.data.name), merged);
-      c.id = cid; c.rev = cloud.rev;
-      applyCorePrint(c);
-
-      // append-only entries wapas laao
-      const rows = await DB.pullEntries(cid);
-      c.orders = []; c.journal = []; c.payments = []; c.purchases = []; c.expenses = [];
-      rows.forEach(r => {
-        const list = c[r.kind];
-        if(Array.isArray(list) && !list.some(x => x.id === r.id)) list.push(r.data);
-      });
-      setSync('ok', rows.length + ' entries');
-    }
-
-    ui = openClient(c);
-    $('cname').textContent = c.name;
-    save();
-
-    const L = own.ownerLetter || 'O';
-    await startSession(DB, c, own);
-    await flushOutbox(DB);
-
-  }catch(e){
-    setSync('off','offline — phone par chal raha hai');
-    console.error('cloud:', e.message);
-    if(!c) boot();          // cloud na mile to bhi kaam chalta rahe
-    ui = openClient(c);
-  }
-
-  drawDash(); drawActions();
-  startAutoSync();
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────────
-   CHALTA HUA SYNC
-   ───────────────────────────────────────────────────────────────────────── */
-
-let syncTimer = null, syncing = false, syncAgain = false;
-
-function startAutoSync(){
-  if(syncTimer) clearInterval(syncTimer);
-  syncTimer = setInterval(() => pushAll(), 20000);      // har 20 second
-  window.addEventListener('online',  () => pushAll());
-  window.addEventListener('offline', () => setSync('off','offline'));
-}
-
-/* Har nayi entry cloud par. Blob alag, taale ke saath. */
-async function pushAll(){
-  if(!cloudOn) return;
-  // Sync pehle se chal rahi ho to chhoRo mat — nishaan laga do ke khatam
-  // hote hi ek dafa aur chale. (Pehle yeh entry 20 second tak atki rehti thi.)
-  if(syncing){ syncAgain = true; return; }
-  syncing = true;
-  try{
-    do{
-      syncAgain = false;
-      await flushOutbox(DB);      // pehra andar hai: sirf ACTIVE_CLIENT_ID ki
-      await pushBlob();
-    }while(syncAgain);
-    const meri = OUTBOX.filter(j => c && j.clientId === c.id).length;
-    setSync(meri ? 'off' : 'ok', meri ? meri + ' abhi upload nahi hui' : 'sab mehfooz');
-  }catch(e){
-    setSync('off', (OUTBOX.length ? OUTBOX.length + ' baqi · ' : '') + 'offline');
-  }finally{ syncing = false; }
-}
-
-
-async function pushBlob(){
-  for(let i=0; i<3; i++){
-    const cur = await DB.readBlob(c.id);
-    const mine = blobOf(c);
-    const next = cur.data ? mergeBlob(mine, cur.data) : mine;
-    // apni tabdeeliyan cloud wale par
-    Object.assign(next, { menu:mine.menu, customers:mine.customers,
-      suppliers:mine.suppliers, expenseHeads:mine.expenseHeads,
-      moduleSettings:mine.moduleSettings, name:mine.name,
-      vehicles:mine.vehicles, loans:mine.loans,   // Car Rental (E8) — jaisa menu/customers
-      cashOverride: Object.assign({}, (cur.data||{}).cashOverride, mine.cashOverride),
-      closedDays: mergeByKey((cur.data||{}).closedDays, mine.closedDays, 'date') });
-    // Kuch badla hi nahi to mat likho. (Pehle har 20 second mein poora
-    // record dobara likha jata tha — ek din mein rev 31 tak pahunch gayi,
-    // jabke asal tabdeeli do-teen thi. Fazool trafik, aur har fazool likhai
-    // doosre device se takraav ka mauqa.)
-    if(cur.data && sameData(next, cur.data)){ c.rev = cur.rev; return true; }
-    const r = await DB.writeBlobIfRev(c.id, next, cur.rev);
-    if(r.ok){ c.rev = r.rev; return true; }
-    // kisi aur ne beech mein likha — dobara parh kar milao
-  }
-  return false;
-}
-
-/* Tarteeb se azad muqabla — khaanon ki tarteeb alag ho, ya khaali {} aur
-   gumshuda khaana, to bhi "badla nahi" mana jaye. */
-function _norm(v){
-  if(Array.isArray(v)) return v.map(_norm);
-  if(v && typeof v === 'object'){
-    const o = {};
-    Object.keys(v).sort().forEach(k => {
-      const x = v[k];
-      if(x === undefined || x === null) return;
-      if(typeof x === 'object' && !Array.isArray(x) && Object.keys(x).length === 0) return;
-      o[k] = _norm(x);
-    });
-    return o;
-  }
-  return v;
-}
-function sameData(a, b){ return JSON.stringify(_norm(a)) === JSON.stringify(_norm(b)); }
-
-function mergeByKey(a, b, k){
-  const m = new Map(); (a||[]).forEach(x=>m.set(x[k],x)); (b||[]).forEach(x=>m.set(x[k],x));
-  return [...m.values()];
-}
-
-/* Har local save ke baad cloud par bhejne ki koshish.
-   app.js ka save() yeh khud bulata hai — yahan se lapetne ki koshish
-   nahi ki ja sakti kyunki cloud.js pehle chalta hai aur us waqt save()
-   abhi bana hi nahi hota. */
-function afterSave(){
-  if(cloudOn) pushAll();
-}
-</script>
-<script>/* =========================================================================
-   HF SOLUTIONS — CAR RENTAL APP
-   Restaurant ki app se do bunyadi farq:
-   1. Booking ka WAHID raasta DB.createBooking() hai — server khud overlap
-      rok deta hai. Isi liye NAYI BOOKING BANANE KE LIYE INTERNET ZAROORI
-      hai (Restaurant ke order jaisa offline-first nahi) — yeh jaan-boojh
-      kar hai, kyunki double-booking rokna kisi bhi local check se
-      zyada zaroori hai. Purani entries (checkout, kharcha, taxi trip)
-      offline chalti rahengi, jaisa Restaurant mein.
-   2. Naam HAMESHA lazmi — Walk-in Customer yahan chalta hi nahi.
-   ========================================================================= */
-
-const KEY = 'hf_client_carrental';
-const rs  = n => 'Rs ' + Math.round(n).toLocaleString('en-PK');
-const $   = id => document.getElementById(id);
-const today = () => localToday();
-
-const own = {kind:'user', role:'owner', canWriteAccounts:true, canCreateStaff:true,
-             canPairDevice:true, ownerLetter:'O', seqReady:true};
-
-let c, ui;
-
-function queueUp(kind, obj, jLines){
-  if(typeof queueRecord !== 'function') return;
-  queueRecord(c.id, kind, obj);
-  (jLines||[]).forEach((j,n) =>
-    queueRecord(c.id, 'journal', Object.assign({id: obj.id + '-J' + n}, j)));
-}
-
-function newRef(kind){
-  const n = (c.refSeq = (c.refSeq || 0) + 1);
-  return kind + '-' + Date.now().toString(36) + '-' + n;
-}
-
-function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify(c)); }
-  catch(e){ toast('Save nahi hua: ' + e.message); }
-  if(typeof afterSave === 'function') afterSave();
-}
-function load(){
-  try{ const raw = localStorage.getItem(KEY); if(raw) return JSON.parse(raw); }catch(e){}
-  return null;
-}
-
-function freshClient(id, name){
-  const nc = createClient('carRental', {id, name: name || 'Rent A Car', lang:'ro'});
-  nc.returns=[]; nc.capitalEntries=[]; nc.voids=[]; nc.payments=[]; nc.expenses=[]; nc.purchases=[];
-  nc.vehicles=[]; nc.bookings=[]; nc.renters=[]; nc.vehicleOwners=[]; nc.taxiTrips=[];
-  nc.moduleSettings = { thirdPartyVehicles:true, whatsappBill:true, rentalAgreement:true, taxiMode:true };
-  const prev = c; c = nc;
-  try{ postOpening(nc, own, {date: today(), cash:0}); }
-  finally{ c = prev; }
-  return nc;
-}
-
-async function claimSetupPacket(){
-  try{
-    const uname = (session && session.user && session.user.email || '').split('@')[0];
-    const { data: rows } = await sb.from('hf_setup').select('*').eq('login', uname).is('claimed_by', null);
-    const row = rows && rows[0];
-    if(!row) return null;
-    await sb.from('hf_setup').update({ claimed_by: session.user.id, claimed_at: new Date().toISOString() }).eq('id', row.id);
-    return row;
-  }catch(e){ return null; }
-}
-function applySetupPacket(client, packet){
-  client.name = packet.name || client.name;
-  save();
-}
-
-function boot(){
-  const saved = load();
-  if(saved){ c = saved; applyCorePrint(c); save(); }
-  else{ c = freshClient('carrental'); save(); }
-  ui = openClient(c);
-  drawDash();
-}
-
-function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),2200); }
-
-/* ---- navigation ---- */
-let screen = 'dash';
-function go(s){
-  screen = s;
-  document.querySelectorAll('.scr').forEach(x=>x.classList.remove('on'));
-  $('s-'+s).classList.add('on');
-  window.scrollTo(0,0);
-  if(s==='dash') drawDash();
-  if(s==='vehnew') newVehicleForm();
-  if(s==='booknew') newBookingForm();
-  if(s==='taxi') openTaxiScreen();
-  if(s==='rep') openReports();
-  if(s==='set') drawSettings();
-  drawActions();
-}
-
-/* =========================================================================
-   DASHBOARD
-   ========================================================================= */
-function drawDash(){
-  const D = today();
-  $('cname').textContent = c.name;
-  const dt = new Date(D+'T00:00:00');
-  $('dnum').textContent = dt.toLocaleDateString('en-GB',{day:'numeric',month:'short'});
-  $('dtxt').textContent = dt.toLocaleDateString('en-GB',{weekday:'long'});
-
-  const vs = c.vehicles||[];
-  const out = vs.filter(v=>v.status==='rented').length;
-  const avail = vs.filter(v=>v.status==='available').length;
-  const maint = vs.filter(v=>v.status==='maintenance').length;
-  $('heroOut').innerHTML = out + '<small>/ ' + vs.length + '</small>';
-  const tot = vs.length||1;
-  $('fleetbar').innerHTML =
-    '<i style="width:'+(out/tot*100)+'%;background:var(--stop)"></i>'+
-    '<i style="width:'+(avail/tot*100)+'%;background:var(--route)"></i>'+
-    '<i style="width:'+(maint/tot*100)+'%;background:var(--steel)"></i>';
-  $('fleetLegend').innerHTML =
-    '<span><i class="dot" style="background:var(--stop)"></i>Bahar <b>'+out+'</b></span>'+
-    '<span><i class="dot" style="background:var(--route)"></i>Khali <b>'+avail+'</b></span>'+
-    '<span><i class="dot" style="background:var(--steel)"></i>Marammat <b>'+maint+'</b></span>';
-
-  const todays = (c.bookings||[]).filter(b => D>=b.pickup && D<=b.dropoff && b.status!=='cancelled');
-  const dueTotal = (c.bookings||[]).filter(b=>b.status==='completed').reduce((s,b)=>s+(b.bill-b.received),0);
-  $('tiles').innerHTML =
-    '<div class="tile"><div class="v">'+todays.length+'</div><div class="k">Aaj active</div></div>'+
-    '<div class="tile"><div class="v">'+(c.bookings||[]).length+'</div><div class="k">Kul bookings</div></div>'+
-    '<div class="tile"><div class="v">'+rs(dueTotal)+'</div><div class="k">Bakaya</div></div>';
-
-  $('bcount').textContent = todays.length;
-  $('blist').innerHTML = todays.map(b=>{
-    const v = vs.find(x=>x.reg===b.vehicleReg) || {};
-    return '<div class="row tapable" onclick="openBillFor(\''+b.id+'\')">'+
-      '<div class="reg">'+b.vehicleReg+'</div>'+
-      '<div class="nm">'+b.renterName+' - '+(v.make||'')+' '+(v.model||'')+'</div>'+
-      '<span class="tag '+b.status+'">'+(b.status==='completed'?'Wapas':'Chal rahi')+'</span>'+
-      '<div class="amt">'+rs(b.bill)+'</div></div>';
-  }).join('') || '<div class="row"><div class="nm">Aaj koi booking nahi</div></div>';
-
-  $('fcount').textContent = vs.length;
-  $('flist').innerHTML = vs.map(v=>{
-    const ownTag = v.ownership==='owned'?'Apni':v.ownership==='leased'?'Bank Lease':'Third-Party';
-    return '<div class="row tapable" onclick="openVehicleActions(\''+v.reg+'\')">'+
-      '<span class="reg">'+v.reg+'</span>'+
-      '<div class="nm">'+(v.make||'')+' '+(v.model||'')+' <span class="own-tag">'+ownTag+
-        (v.ownership==='thirdParty'?' - '+v.commissionPct+'%':'')+'</span></div>'+
-      '<span class="vstatus '+v.status+'">'+(v.status==='available'?'Khali':v.status==='rented'?'Bahar':'Marammat')+'</span></div>';
-  }).join('') || '<div class="row"><div class="nm">Koi gari nahi - "+ Nayi Gari" se shuru karein</div></div>';
-
-  const probs = [...auditCorePrints(), ...auditClient(c), ...auditAccounting(c), ...auditCarRental(c)];
-  const tb = trialBalance(c);
-  $('checks').innerHTML = probs.length ? probs.map(p=>'\\u26a0 '+p).join('<br>')
-    : '<span class="ok">Hisaab barabar hai.</span> Trial balance '+rs(tb.totalDr);
-}
-
-function openVehicleActions(reg){
-  const v = c.vehicles.find(x=>x.reg===reg);
-  if(!v) return;
-  if(v.status==='available'){ pendingVehicle=reg; go('booknew'); }
-  else if(v.status==='rented'){
-    const b = c.bookings.find(x=>x.vehicleReg===reg && x.status==='confirmed');
-    if(b){ pendingCheckout=b.id; go('checkout'); }
-  } else {
-    if(confirm(reg+' ko wapas khaali karna hai?')){ v.status='available'; save(); drawDash(); }
-  }
-}
-
-/* =========================================================================
-   NAYI GARI
-   ========================================================================= */
-function newVehicleForm(){
-  $('vh-reg').value=''; $('vh-make').value=''; $('vh-model').value=''; $('vh-rate').value='';
-  $('vh-cost').value=''; $('vh-pdate').value=today(); $('vh-ownername').value=''; $('vh-comm').value='';
-  vhOwnership = 'owned';
-  drawVhOwn();
-}
-let vhOwnership = 'owned';
-function drawVhOwn(){
-  const opts = [['owned','Apni'],['leased','Bank Lease'],['thirdParty','Third-Party']];
-  $('vh-own').innerHTML = opts.map(([id,lbl])=>
-    '<button type="button" class="chip '+(vhOwnership===id?'on':'')+'" onclick="setVhOwn(\''+id+'\')">'+lbl+'</button>').join('');
-  $('vh-owned-fields').style.display = vhOwnership==='thirdParty' ? 'none' : '';
-  $('vh-tp-fields').style.display = vhOwnership==='thirdParty' ? '' : 'none';
-}
-function setVhOwn(id){ vhOwnership=id; drawVhOwn(); }
-
-function saveVehicle(){
-  const reg = String($('vh-reg').value||'').trim().toUpperCase();
-  const rate = Number($('vh-rate').value)||0;
-  if(!reg){ toast('Registration number likhein'); return; }
-  if(rate<=0){ toast('Kiraya likhein'); return; }
-  try{
-    const v = addVehicle(c, own, {
-      reg, make:$('vh-make').value.trim(), model:$('vh-model').value.trim(),
-      dailyRate:rate, ownership:vhOwnership,
-      cost:Number($('vh-cost').value)||0, paidFrom:'1000', purchaseDate:$('vh-pdate').value,
-      ownerName:$('vh-ownername').value.trim(), commissionPct:Number($('vh-comm').value)||0
-    });
-    if(v.journalLines && v.journalLines.length)
-      queueUp('vehicle-purchase', {id:'VEH-'+reg}, v.journalLines);
-    save();
-    toast(reg+' shamil ho gayi');
-    go('dash');
-  }catch(e){ $('vh-hint').className='hint warn'; $('vh-hint').textContent = e.message; }
-}
-
-/* =========================================================================
-   NAYI BOOKING — server-authoritative (internet zaroori)
-   ========================================================================= */
-let pendingVehicle = null, BK = null, BK_PHOTO = null;
-
-/* ID card ki tasveer — chota (max 640px) karke data-URI mein rakhte hain,
-   taake booking ke saath cloud mein chali jaye (jo bhi device par khole
-   wahan dikhe) magar record fazool bhaari na ho. */
-function onBkPhoto(input){
-  const file = input.files && input.files[0];
-  if(!file){ BK_PHOTO=null; $('bk-photo-msg').textContent=''; return; }
-  $('bk-photo-msg').className='hint'; $('bk-photo-msg').textContent='Load ho rahi hai...';
-  const reader = new FileReader();
-  reader.onload = () => {
-    const img = new Image();
-    img.onload = () => {
-      const max = 640;
-      const scale = Math.min(1, max / Math.max(img.width, img.height));
-      const w = Math.round(img.width*scale), h = Math.round(img.height*scale);
-      const canvas = document.createElement('canvas');
-      canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      BK_PHOTO = canvas.toDataURL('image/jpeg', 0.6);
-      $('bk-photo-msg').className='hint ok';
-      $('bk-photo-msg').textContent = 'Tasveer li gayi (' + Math.round(BK_PHOTO.length/1024) + ' KB)';
-    };
-    img.onerror = () => { $('bk-photo-msg').className='hint warn'; $('bk-photo-msg').textContent='Tasveer load nahi hui'; };
-    img.src = reader.result;
-  };
-  reader.onerror = () => { $('bk-photo-msg').className='hint warn'; $('bk-photo-msg').textContent='Load nahi hui'; };
-  reader.readAsDataURL(file);
-}
-
-function newBookingForm(){
-  const avail = (c.vehicles||[]).filter(v=>v.status==='available');
-  $('bk-veh').innerHTML = avail.map(v=>'<option value="'+v.reg+'">'+v.reg+' - '+v.make+' '+v.model+' (Rs '+v.dailyRate+'/din)</option>').join('');
-  if(pendingVehicle) $('bk-veh').value = pendingVehicle;
-  pendingVehicle = null;
-  BK = { type: ui.orderTypes[0].id };
-  BK_PHOTO = null;
-  $('bk-name').value=''; $('bk-cnic').value=''; $('bk-license').value=''; $('bk-photo').value='';
-  $('bk-photo-msg').textContent='';
-  $('bk-pickup').value = today(); $('bk-dropoff').value = addDays(today(),1);
-  $('bk-dep').value='0'; $('bk-km').value='0';
-  onVehPick();
-  drawBkType();
-  $('bk-msg').textContent='';
-}
-function onVehPick(){
-  const v = c.vehicles.find(x=>x.reg===$('bk-veh').value);
-  if(v) $('bk-rate').value = v.dailyRate;
-  updateBkTotal();
-}
-function drawBkType(){
-  $('bk-type').innerHTML = ui.orderTypes.map(ot=>
-    '<button type="button" class="chip '+(BK.type===ot.id?'on':'')+'" onclick="setBkType(\''+ot.id+'\')">'+
-    t(ot.labelKey, ui.lang)+'</button>').join('');
-}
-function setBkType(id){ BK.type=id; drawBkType(); }
-function updateBkTotal(){
-  const p=$('bk-pickup').value, d=$('bk-dropoff').value, rate=Number($('bk-rate').value)||0;
-  if(!p||!d) return;
-  const days = Math.max(1, Math.ceil((new Date(d)-new Date(p))/86400000));
-  $('bk-total').textContent = days+' din x '+rs(rate)+' = '+rs(days*rate);
-}
-
-async function saveBooking(){
-  const vehicleReg = $('bk-veh').value;
-  if(!vehicleReg){ toast('Gari chunein - koi khali gari nahi'); return; }
-  const renterName = String($('bk-name').value||'').trim();
-  if(!renterName){ $('bk-msg').textContent='Naam lazmi hai'; return; }
-  const pickup=$('bk-pickup').value, dropoff=$('bk-dropoff').value;
-  if(!(dropoff>pickup)){ $('bk-msg').textContent='Drop-off pickup se baad honi chahiye'; return; }
-
-  let booking;
-  try{
-    booking = buildBooking(ui, c, own, {
-      vehicleReg, renterName, cnic:$('bk-cnic').value.trim(), license:$('bk-license').value.trim(),
-      orderType:BK.type, pickup, dropoff,
-      dailyRate:Number($('bk-rate').value)||0, deposit:Number($('bk-dep').value)||0,
-      startKm:Number($('bk-km').value)||0
-    });
-  }catch(e){ $('bk-msg').textContent = e.message; return; }
-
-  if(BK_PHOTO) booking.photo = BK_PHOTO;   // ID card ki tasveer, booking ke record ke saath
-
-  if(!cloudOn){
-    $('bk-msg').textContent = 'Booking ke liye internet chahiye (double-booking rokne ke liye database check zaroori hai)';
-    return;
-  }
-
-  $('bk-msg').textContent = 'Check ho raha hai...';
-  try{
-    const r = await DB.createBooking(c.id, booking);
-    if(!r.ok){
-      $('bk-msg').textContent = r.reason==='overlap'
-        ? 'Yeh gari in tareekhon mein pehle se book hai'
-        : 'Nakaam: ' + r.reason;
-      return;
-    }
-  }catch(e){
-    $('bk-msg').textContent = 'Cloud se raabta nahi ho saka: ' + e.message;
-    return;
-  }
-
-  const J = postBooking(c, booking);
-  queueUp('bookings', booking, J);
-  save();
-  toast('Booking '+booking.id+' ban gayi');
-  lastBillBooking = booking;
-  go('dash');
-  openBillFor(booking.id);
-}
-
-/* =========================================================================
-   CHECKOUT
-   ========================================================================= */
-let pendingCheckout = null;
-function openCheckoutFor(id){ pendingCheckout=id; go('checkout'); }
-function drawCheckout(){
-  const b = c.bookings.find(x=>x.id===pendingCheckout);
-  if(!b){ go('dash'); return; }
-  const v = c.vehicles.find(x=>x.reg===b.vehicleReg)||{};
-  $('co-summary').innerHTML =
-    '<div class="row"><div class="nm">'+b.renterName+' - '+b.vehicleReg+'</div><div class="amt">'+rs(b.bill)+'</div></div>'+
-    '<div class="row"><div class="nm">'+b.pickup+' se '+b.dropoff+'</div></div>';
-  $('co-km').value = b.startKm;
-  $('co-damage').value = '0';
-  $('co-hint').textContent = v.dailyKmCap!=null ? ('Din '+b.days+' x '+v.dailyKmCap+'km = '+(v.dailyKmCap*b.days)+'km allowed') : '';
-}
-function confirmCheckout(){
-  try{
-    const r = checkoutBooking(c, own, pendingCheckout, {
-      endKm:Number($('co-km').value)||null, damage:Number($('co-damage').value)||0, received:null
-    });
-    r.lines.forEach(()=>{});
-    queueUp('checkouts', {id:'CO-'+r.booking.id, bookingId:r.booking.id, at:new Date().toISOString()}, r.lines);
-    save();
-    toast('Checkout ho gaya - '+rs(r.booking.bill));
-    lastBillBooking = r.booking;
-    go('dash');
-    openBillFor(r.booking.id);
-  }catch(e){ $('co-msg').textContent = e.message; }
-}
-
-/* =========================================================================
-   TAXI MODE
-   ========================================================================= */
-function openTaxiScreen(){
-  $('tx-veh').innerHTML = (c.vehicles||[]).filter(v=>v.status!=='maintenance')
-    .map(v=>'<option value="'+v.reg+'">'+v.reg+' - '+v.make+' '+v.model+'</option>').join('');
-  drawTaxiShift();
-}
-function drawTaxiShift(){
-  const reg = $('tx-veh').value;
-  const active = isTaxiShiftActive(c, reg);
-  $('tx-shift').innerHTML = active
-    ? '<button class="chip on" onclick="stopShift()">Shift chalu - band karein</button>'
-    : '<button class="chip" onclick="startShift()">Shift shuru karein</button>';
-  drawTaxiList();
-}
-function startShift(){ try{ startTaxiShift(c,own,$('tx-veh').value); }catch(e){ toast(e.message); } drawTaxiShift(); }
-function stopShift(){ endTaxiShift(c,own,$('tx-veh').value); drawTaxiShift(); }
-
-function saveTaxiTrip(){
-  const reg = $('tx-veh').value;
-  if(!isTaxiShiftActive(c,reg)){ toast('Pehle shift shuru karein'); return; }
-  try{
-    const trip = logTaxiTrip(c, own, {
-      vehicleReg:reg, fare:Number($('tx-fare').value)||0, location:$('tx-loc').value.trim(),
-      renterName:$('tx-name').value.trim(), phone:$('tx-phone').value.trim()
-    });
-    queueUp('taxiTrips', trip, trip.journalLines||[]);
-    save();
-    $('tx-fare').value=''; $('tx-loc').value=''; $('tx-name').value=''; $('tx-phone').value='';
-    toast('Trip - '+rs(trip.fare));
-    drawTaxiList();
-  }catch(e){ toast(e.message); }
-}
-function drawTaxiList(){
-  const reg = $('tx-veh').value;
-  const e = vehicleTaxiEarnings(c, reg, today(), today());
-  $('tx-count').textContent = e.trips+' trip';
-  $('tx-tiles').innerHTML =
-    '<div class="tile"><div class="v">'+rs(e.gross)+'</div><div class="k">Kul kamai</div></div>'+
-    '<div class="tile"><div class="v">'+rs(e.companyShare)+'</div><div class="k">Company hissa</div></div>'+
-    '<div class="tile"><div class="v">'+e.trips+'</div><div class="k">Trips</div></div>';
-  $('tx-list').innerHTML = (c.taxiTrips||[]).filter(x=>x.vehicleReg===reg && dayOf(x.at)===today())
-    .map(x=>'<div class="row"><div class="nm">'+(x.location||x.renterName||'-')+'</div><div class="amt">'+rs(x.fare)+'</div></div>').join('')
-    || '<div class="row"><div class="nm">Aaj koi trip nahi</div></div>';
-}
-
-/* =========================================================================
-   BILL / AGREEMENT SHEET
-   ========================================================================= */
-let lastBillBooking = null;
-function openBillFor(id){
-  const b = c.bookings.find(x=>x.id===id);
-  if(!b) return;
-  lastBillBooking = b;
-  const v = c.vehicles.find(x=>x.reg===b.vehicleReg)||{};
-  $('bs-summary').innerHTML =
-    '<div class="row"><div class="nm">'+b.renterName+'</div><div class="amt">'+rs(b.bill)+'</div></div>';
-  if(b.photo){ $('bs-photo').src=b.photo; $('bs-photo').style.display=''; }
-  else { $('bs-photo').style.display='none'; }
-  $('bs-bill').textContent = bookingBillText(c, b);
-  $('bs-agree-box').style.display = hasModule(ui,'rentalAgreement') ? '' : 'none';
-  $('bs-agree').textContent = hasModule(ui,'rentalAgreement') ? rentalAgreementText(c, b) : '';
-  $('bs-phone').value = '';
-  $('billsheet').classList.add('on');
-  onBsPhone();
-}
-function closeBillSheet(){ $('billsheet').classList.remove('on'); drawDash(); }
-function cleanPhone(raw){
-  let ph=(raw||'').replace(/[^0-9]/g,'');
-  if(!ph) return '';
-  if(ph.startsWith('0')) ph='92'+ph.slice(1);
-  else if(ph.length===10) ph='92'+ph;
-  return ph;
-}
-function onBsPhone(){
-  const ph = cleanPhone($('bs-phone').value);
-  const link = ph ? 'https://wa.me/'+ph+'?text='+encodeURIComponent($('bs-bill').textContent) : '#';
-  $('bs-send').href = link;
-  $('bs-send').style.opacity = ph?1:.45;
-}
-function onBillSend(){
-  const ph = cleanPhone($('bs-phone').value);
-  if(!ph){ toast('Number likhein'); return false; }
-  return true;
-}
-function copyBillText(){
-  const txt = $('bs-bill').textContent;
-  try{
-    if(navigator.clipboard) navigator.clipboard.writeText(txt);
-    toast('Copy ho gaya');
-  }catch(e){ toast('Copy nahi hua'); }
-}
-$('bs-phone') && ($('bs-phone').oninput = onBsPhone);
-
-/* =========================================================================
-   REPORTS
-   ========================================================================= */
-function openReports(){
-  const pl = profitAndLoss(c, c.openingPosted||today(), today());
-  $('rp-pl').innerHTML =
-    '<div class="l"><span>Aamdani</span><span>'+rs(pl.revenue)+'</span></div>'+
-    pl.expenses.map(e=>'<div class="l"><span>'+e.name+'</span><span>-'+rs(e.amount)+'</span></div>').join('')+
-    '<div class="l tot"><span>'+(pl.net>=0?'Munafa':'Nuqsan')+'</span><span class="'+(pl.net>=0?'pos':'neg')+'">'+rs(Math.abs(pl.net))+'</span></div>';
-
-  const owners = vehicleOwnerPayouts(c);
-  $('rp-owners').innerHTML = owners.map(o=>
-    '<div class="row"><div class="nm">'+o.name+'</div><div class="amt owed">'+rs(o.owed)+'</div></div>').join('')
-    || '<div class="row"><div class="nm">Kisi ko kuch nahi dena</div></div>';
-
-  const bs = balanceSheet(c, today());
-  $('rp-bs').innerHTML =
-    '<div class="l"><span>Assets</span><span>'+rs(bs.totalAssets)+'</span></div>'+
-    '<div class="l"><span>Liabilities</span><span>'+rs(bs.totalLiabilities)+'</span></div>'+
-    '<div class="l tot"><span>'+(bs.barabar?'Barabar':'Farq '+bs.farq)+'</span><span>'+rs(bs.totalEquity)+'</span></div>';
-}
-
-/* =========================================================================
-   SETTINGS
-   ========================================================================= */
-function drawSettings(){
-  const OPT = [
-    ['thirdPartyVehicles','Third-Party Gariyan','Commission wali gariyan'],
-    ['bankLease','Bank Lease','Loan se khareedi gayi gari'],
-    ['depreciation','Depreciation','Har mahine gari ki qadar kam'],
-    ['mileageCap','Mileage Cap','Extra KM ka kharcha'],
-    ['whatsappBill','WhatsApp Bill','Booking ke baad grahak ko'],
-    ['rentalAgreement','Rental Agreement','CNIC/license ke saath'],
-    ['taxiMode','Taxi Mode','Meter trips, naam optional']
-  ];
-  $('st-mods').innerHTML = OPT.map(([id,title,desc])=>{
-    const on = hasModule(ui,id);
-    return '<div class="row"><div class="nm"><b>'+title+'</b><br><span class="hint">'+desc+'</span></div>'+
-      '<button class="chip '+(on?'on':'')+'" onclick="toggleModule(\''+id+'\')">'+(on?'ON':'OFF')+'</button></div>';
-  }).join('');
-}
-function toggleModule(id){
-  c.moduleSettings = c.moduleSettings||{};
-  const now = hasModule(ui,id);
-  c.moduleSettings[id] = !now;
-  try{ ui=openClient(c); applyCorePrint(c); save(); drawSettings(); }
-  catch(e){ c.moduleSettings[id]=now; ui=openClient(c); toast(e.message); drawSettings(); }
-}
-
-/* =========================================================================
-   BOTTOM BAR
-   ========================================================================= */
-function drawActions(){
-  if(screen==='dash'){
-    $('actbar').innerHTML =
-      '<button onclick="go(\'vehnew\')">+ Gari<small>نئی گاڑی</small></button>'+
-      '<button onclick="go(\'taxi\')">Taxi<small>ٹیکسی</small></button>'+
-      '<button class="go" onclick="go(\'booknew\')">+ Booking<small>نئی بکنگ</small></button>'+
-      '<button onclick="go(\'rep\')">Reports</button>'+
-      '<button onclick="go(\'set\')">Set</button>';
-    return;
-  }
-  if(screen==='vehnew'){
-    $('actbar').innerHTML = '<button onclick="go(\'dash\')">Wapas</button>'+
-      '<button class="go" style="flex:2" onclick="saveVehicle()">Gari shamil karein</button>';
-    return;
-  }
-  if(screen==='booknew'){
-    $('actbar').innerHTML = '<button onclick="go(\'dash\')">Wapas</button>'+
-      '<button class="go" style="flex:2" onclick="saveBooking()">Booking confirm karein</button>';
-    return;
-  }
-  if(screen==='checkout'){
-    drawCheckout();
-    $('actbar').innerHTML = '<button onclick="go(\'dash\')">Wapas</button>'+
-      '<button class="go" style="flex:2" onclick="confirmCheckout()">Checkout confirm</button>';
-    return;
-  }
-  if(screen==='taxi'){
-    $('actbar').innerHTML = '<button onclick="go(\'dash\')">Wapas</button>'+
-      '<button class="go" style="flex:2" onclick="saveTaxiTrip()">Trip mehfooz</button>';
-    return;
-  }
-  $('actbar').innerHTML = '<button class="go" onclick="go(\'dash\')">Dashboard</button>';
-}
-
-/* ---- shuruaat ---- */
-(function(){
-  const ok = (typeof initCloud === 'function') && initCloud();
-  if(!ok){
-    $('s-login').classList.remove('on'); $('app').style.display='';
-    boot(); drawActions(); setSync('off','sirf is phone par');
-    return;
-  }
-  sb.auth.getSession().then(({data})=>{
-    if(data && data.session){ session=data.session; afterLogin(); }
-    else{ const saved=load(); if(saved) c=saved; }
-  }).catch(()=>{
-    $('s-login').classList.remove('on'); $('app').style.display='';
-    boot(); drawActions();
-  });
-})();
-</script>
-</body>
-</html>
+    orders:m.o
