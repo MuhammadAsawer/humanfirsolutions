@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HF Solutions — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0B2A22; --ink-2:#17453A;
+  --paper:#FAF6EC; --paper-2:#EFE8D8;
+  --brass:#8F5F17; --brass-lit:#C59234;
+  --sage:#6B7C70; --alert:#95322A; --leaf:#3F6B4A;
+  --line:rgba(11,42,34,.12); --r:14px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --ink:#F0EBDF; --ink-2:#CBC4B4; --paper:#0A1613; --paper-2:#132320;
+  --sage:#8B9C90; --line:rgba(240,235,223,.14);
+  --brass:#E0AB4C; --brass-lit:#F0C671; --alert:#E08A7E; --leaf:#78B58C;
+}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);height:100%}
+body{font-family:"Instrument Sans",system-ui,sans-serif;font-size:16px;line-height:1.45}
+.mono{font-family:"JetBrains Mono",monospace}
+.wrap{max-width:720px;margin:0 auto;padding:0 16px calc(90px + env(safe-area-inset-bottom))}
+.scr{display:none} .scr.on{display:block}
+
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;
+  margin:0 -16px 22px;padding:calc(18px + env(safe-area-inset-top)) 16px 16px;
+  background:var(--ink);color:var(--paper);border-radius:0 0 18px 18px}
+.brand{font-size:15px;font-weight:600;margin:0;letter-spacing:.02em}
+.brand span{color:var(--brass-lit)}
+.who{font-size:12px;color:rgba(250,246,236,.62);margin:2px 0 0}
+.back{background:none;border:0;color:var(--paper);font:inherit;font-size:15px;padding:0;cursor:pointer}
+
+.login{max-width:400px;margin:0 auto;padding:14vh 22px 40px}
+.login h1{font-size:22px;margin:0 0 2px}
+.login .mut{color:var(--sage);font-size:14px;margin:0 0 24px}
+label{display:block;font-size:12.5px;color:var(--sage);margin-bottom:6px}
+input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:11px;
+  background:var(--paper);color:var(--ink);font:inherit;font-size:15px;margin-bottom:14px}
+input:focus,select:focus{outline:2px solid var(--brass);outline-offset:1px}
+button{font:inherit;cursor:pointer}
+.go{width:100%;padding:14px;border:0;border-radius:13px;background:var(--ink);
+  color:var(--paper);font-size:15.5px;font-weight:600}
+.go:disabled{opacity:.5}
+.hint{font-size:12.5px;color:var(--sage);margin:8px 0 0}
+.hint.warn{color:var(--alert)}
+.hint.ok{color:var(--leaf)}
+
+h2{font-size:14px;font-weight:600;margin:22px 0 10px;display:flex;justify-content:space-between;align-items:baseline}
+h2 em{font-style:normal;font-size:12px;color:var(--sage);font-weight:400}
+
+.rows{border-top:1px solid var(--line);margin-bottom:8px}
+.row{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid var(--line)}
+.row.tapable{cursor:pointer}
+.row.tapable:active{background:var(--paper-2)}
+.row .nm{flex:1;min-width:0}
+.row .nm b{display:block;font-size:14.5px}
+.row .nm span{font-size:12px;color:var(--sage)}
+.tag{font-size:10.5px;padding:3px 8px;border-radius:99px;background:var(--paper-2);color:var(--sage);flex:none}
+.tag.wait{color:var(--brass);background:color-mix(in srgb,var(--brass) 14%,transparent)}
+.tag.live{color:var(--leaf);background:color-mix(in srgb,var(--leaf) 14%,transparent)}
+
+.card{border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fab{position:fixed;inset-inline:0;bottom:0;background:var(--paper);border-top:1px solid var(--line);
+  padding:10px 16px calc(12px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
+.fab button{width:100%}
+
+.catrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.catrow input{margin:0;flex:1}
+.catrow input.amt{flex:0 0 90px;text-align:end}
+.catrow .rm{background:none;border:0;color:var(--alert);font-size:20px;padding:0 4px;flex:none}
+.addln{background:none;border:1px dashed var(--line);border-radius:10px;padding:10px;width:100%;
+  color:var(--sage);font-size:13.5px;margin-top:8px}
+
+.steps{display:flex;gap:6px;margin-bottom:18px}
+.steps div{flex:1;height:4px;border-radius:99px;background:var(--paper-2)}
+.steps div.on{background:var(--ink)}
+
+.copybox{display:flex;gap:8px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+.copybox b{flex:1;font-size:14.5px}
+.copybox button{background:var(--ink);color:var(--paper);border:0;border-radius:8px;padding:7px 12px;font-size:12.5px}
+</style>
+</head>
+<body>
+
+<section class="scr on" id="s-login">
+  <div class="login">
+    <h1>HF Solutions</h1>
+    <p class="mut">Admin</p>
+    <label>Username</label>
+    <input id="lg-email" autocomplete="username" autocapitalize="none" placeholder="your admin username">
+    <label>Password</label>
+    <input id="lg-pass" type="password" autocomplete="current-password">
+    <button class="go" id="lg-go" onclick="doLogin()">Andar aayein</button>
+    <p class="hint" id="lg-msg"></p>
+  </div>
+</section>
+
+<div class="wrap" id="app" style="display:none">
+
+  <section class="scr on" id="s-list">
+    <div class="top">
+      <div><p class="brand">HF <span>ADMIN</span></p><p class="who" id="who">—</p></div>
+      <button class="back" onclick="doLogout()">Logout</button>
+    </div>
+
+    <h2>Ready hone wale <em id="c-wait"></em></h2>
+    <div class="rows" id="waitlist"></div>
+
+    <h2>Live clients <em id="c-live"></em></h2>
+    <div class="rows" id="livelist"></div>
+
+    <p class="hint" id="admin-note" style="margin-top:18px"></p>
+  </section>
+
+  <section class="scr" id="s-new">
+    <div class="top">
+      <div><button class="back" onclick="go('list')">‹ Wapas</button><p class="brand">Naya Client</p></div>
+      <div></div>
+    </div>
+    <div class="steps"><div class="on" id="st1"></div><div id="st2"></div><div id="st3"></div></div>
+
+    <div id="step-1">
+      <label>Username <span class="mono">(login ke liye)</span></label>
+      <input id="nw-login" autocapitalize="none" placeholder="misal: basha" oninput="checkLogin()">
+      <p class="hint" id="nw-login-msg"></p>
+      <label>Karobar ka naam</label>
+      <input id="nw-name" placeholder="misal: BASHA Restaurant">
+      <label>Core Print</label>
+      <select id="nw-core"><option value="restaurant">Restaurant</option><option value="carRental">Rent A Car</option></select>
+      <p class="hint" id="nw-core-note"></p>
+      <p class="hint">Core sirf woh deta hai jo har us qism ke karobar mein hota hai — COA aur standard kharche. Menu, grahak, suppliers agle qadam mein.</p>
+      <button class="go" onclick="toStep(2)">Agla qadam</button>
+    </div>
+
+    <div id="step-2" style="display:none">
+      <h2 style="margin-top:0">Menu <em id="mn-count"></em></h2>
+      <div id="mn-rows"></div>
+      <button class="addln" onclick="addRow('mn')">+ Cheez shamil karein</button>
+
+      <h2>Grahak <em id="cu-count"></em></h2>
+      <div id="cu-rows"></div>
+      <button class="addln" onclick="addRow('cu')">+ Grahak shamil karein</button>
+
+      <h2>Suppliers <em id="sp-count"></em></h2>
+      <div id="sp-rows"></div>
+      <button class="addln" onclick="addRow('sp')">+ Supplier shamil karein</button>
+
+      <p class="hint" style="margin-top:14px">Balance kuch mat likhein — woh client khud, ek ek karke, apni app mein daalega.</p>
+      <div class="grid2" style="margin-top:16px">
+        <button class="go" style="background:transparent;color:var(--ink);border:1px solid var(--line)" onclick="toStep(1)">Pichhla</button>
+        <button class="go" onclick="toStep(3)">Agla qadam</button>
+      </div>
+    </div>
+
+    <div id="step-3" style="display:none">
+      <div class="card" id="preview"></div>
+      <button class="go" id="create-go" onclick="createClient()">Client banayein</button>
+    </div>
+  </section>
+
+  <section class="scr" id="s-done">
+    <div class="top">
+      <div><button class="back" onclick="go('list')">‹ Wapas</button><p class="brand">Ban gaya</p></div>
+      <div></div>
+    </div>
+    <p class="hint ok">Client ban gaya. Yeh username unhein bhej dein — pehli baar app kholte hi un ka catalog khud aa jayega.</p>
+    <div class="copybox" style="margin-top:14px">
+      <b id="done-login">—</b>
+      <button onclick="copyLogin()">Copy</button>
+    </div>
+    <p class="hint" style="margin-top:14px">Supabase mein is username ke liye <span class="mono" id="done-email">—</span> naam se ek user bana lein (Authentication → Users → Add user → Auto Confirm), aur ek password rakh kar client ko de dein.</p>
+    <button class="go" style="margin-top:20px" onclick="go('list')">Theek hai</button>
+  </section>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>/* =========================================================================
+   HF SOLUTIONS — ADMIN
+   =========================================================================
+   Admin database ki maalikana key kabhi istemal NAHI karta. Bunyadi wajah:
+   RLS har client ke record ko us ke apne login se bandhta hai — Admin
+   seedha kisi ka record likhega to woh khud rok deti hai (jaanch shuda).
+
+   Isi liye Admin sirf ek "TAYYARI KA PARCHA" (hf_setup) banata hai:
+   username, Core Print, naam, catalog. Client pehli baar login karta hai
+   to us ka apna app khud apna parcha uthata hai — koi khatarnak key
+   kahin nahi jati.
+
+   Yeh safha sirf hf_admins mein darj log kholein — RLS khud rok deti hai,
+   agar koi ajnabi login kare to use koi parcha nazar hi nahi aata.
+   ========================================================================= */
+
+const SUPA_URL = 'https://jfzcevknhgexowvligjd.supabase.co';
+const SUPA_KEY = 'sb_publishable_beEoYRGun96-gPMeglQLXQ_jWCYc1aP';
+const LOGIN_DOMAIN = 'hfsolutions.app';
+
+let sb = null, session = null;
+const $ = id => document.getElementById(id);
+
+function loginEmail(raw){
+  const v = String(raw||'').trim().toLowerCase();
+  if(!v) return '';
+  return v.includes('@') ? v : v.replace(/\s+/g,'') + '@' + LOGIN_DOMAIN;
+}
+
+function go(s){
+  document.querySelectorAll('.scr').forEach(x=>x.classList.remove('on'));
+  $('s-'+s).classList.add('on');
+  window.scrollTo(0,0);
+  if(s==='list') drawList();
+  if(s==='new') startNew();
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   LOGIN — sirf hf_admins mein darj log
+   ───────────────────────────────────────────────────────────────────────── */
+async function doLogin(){
+  const email = loginEmail($('lg-email').value);
+  const pass  = String($('lg-pass').value||'');
+  if(!email || !pass){ $('lg-msg').textContent = 'Username aur password likhein'; return; }
+
+  $('lg-go').disabled = true;
+  $('lg-msg').className = 'hint'; $('lg-msg').textContent = 'Andar ja rahe hain…';
+  try{
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if(error) throw error;
+    session = data.session;
+
+    // Admin hai ya nahi — hf_admins khud batati hai (RLS: sirf apna row dikhta hai)
+    const { data: adm } = await sb.from('hf_admins').select('uid').maybeSingle();
+    if(!adm){
+      await sb.auth.signOut();
+      throw new Error('Yeh login admin nahi hai');
+    }
+
+    $('who').textContent = email;
+    $('s-login').classList.remove('on');
+    $('app').style.display = '';
+    go('list');
+  }catch(e){
+    $('lg-msg').className = 'hint warn';
+    $('lg-msg').textContent = (e.message||'').includes('Invalid')
+      ? 'Username ya password theek nahi' : (e.message || 'Andar nahi ja sake');
+  }finally{ $('lg-go').disabled = false; }
+}
+
+async function doLogout(){
+  try{ await sb.auth.signOut(); }catch(e){}
+  location.reload();
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   LIST — jo parche uthaye nahi gaye, aur jo live clients hain
+   ───────────────────────────────────────────────────────────────────────── */
+async function drawList(){
+  $('waitlist').innerHTML = '<div class="row"><div class="nm"><span>load ho raha hai…</span></div></div>';
+  $('livelist').innerHTML = '';
+
+  const { data: setups, error: e1 } = await sb.from('hf_setup')
+    .select('id,login,core_id,name,claimed_by,claimed_at,at').order('at',{ascending:false});
+  const { data: clients, error: e2 } = await sb.from('hf_clients')
+    .select('id,data,updated_at').order('updated_at',{ascending:false});
+
+  if(e1 || e2){ $('admin-note').className='hint warn'; $('admin-note').textContent = (e1||e2).message; return; }
+
+  const waiting = (setups||[]).filter(s => !s.claimed_by);
+  const claimed = (setups||[]).filter(s => s.claimed_by);
+
+  $('c-wait').textContent = waiting.length + ' baaqi';
+  $('waitlist').innerHTML = waiting.map(s =>
+    `<div class="row"><div class="nm"><b>${esc(s.name)}</b><span>@${esc(s.login)} · ${esc(CORE_LABELS[s.core_id]||s.core_id)}</span></div>
+      <span class="tag wait">login ka intezar</span></div>`).join('')
+    || '<div class="row"><div class="nm">Koi baaqi nahi</div></div>';
+
+  $('c-live').textContent = (clients||[]).length + ' active';
+  $('livelist').innerHTML = (clients||[]).map(c => {
+    const d = c.data || {};
+    const s = claimed.find(x => x.claimed_by); // sirf hint ke liye
+    return `<div class="row"><div class="nm"><b>${esc(d.name||c.id)}</b>
+        <span>${esc(d.coreId||'—')} · ${(d.menu||[]).length} menu · ${(d.customers||[]).length} grahak</span></div>
+      <span class="tag live">live</span></div>`;
+  }).join('') || '<div class="row"><div class="nm">Abhi koi client live nahi</div></div>';
+
+  $('admin-note').textContent = 'Naya client neeche "+ Naya Client" se banayein.';
+  drawActions();
+}
+
+function drawActions(){
+  document.querySelectorAll('.fab').forEach(x=>x.remove());
+  const fab = document.createElement('div');
+  fab.className = 'fab';
+  fab.innerHTML = `<button class="go" onclick="go('new')">+ Naya Client</button>`;
+  document.body.appendChild(fab);
+}
+
+const CORE_LABELS = { restaurant:'Restaurant', carRental:'Rent A Car' };
+
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   NAYA CLIENT — teen qadam
+   ───────────────────────────────────────────────────────────────────────── */
+const NEW = { menu:[], customers:[], suppliers:[] };
+let existingLogins = new Set();
+
+function startNew(){
+  NEW.menu=[]; NEW.customers=[]; NEW.suppliers=[];
+  $('nw-login').value=''; $('nw-name').value='';
+  $('nw-login-msg').textContent='';
+  $('nw-core').onchange = onCoreChange;
+  onCoreChange();
+  toStep(1);
+  refreshRows('mn'); refreshRows('cu'); refreshRows('sp');
+  sb.from('hf_setup').select('login').then(({data}) => {
+    existingLogins = new Set((data||[]).map(x=>x.login));
+  });
+  sb.from('hf_clients').select('id').then(({data}) => {
+    (data||[]).forEach(x => existingLogins.add(x.id.replace(/^c_/,'')));
+  });
+}
+
+/* Rent A Car ka Core ban chuka hai aur jaancha gaya hai, magar client ki
+   app (app.html) mein abhi Car Rental ki koi screen nahi — na booking,
+   na gaRi ki list, na checkout. Agar yahan se Rent A Car client banaya
+   jaye, woh login karte hi Restaurant ki screenein dekhega (ghalat).
+   Isi liye yahan saaf khabardar kiya jata hai — chhupaya nahi jata. */
+function onCoreChange(){
+  const isCarRental = $('nw-core').value === 'carRental';
+  $('nw-core-note').className = 'hint' + (isCarRental ? ' warn' : '');
+  $('nw-core-note').textContent = isCarRental
+    ? 'Core taiyar hai, magar client ki app mein Rent A Car ki screenein abhi nahi bani — is client ka login abhi kaam ka nahi hoga.'
+    : '';
+}
+
+function toStep(n){
+  [1,2,3].forEach(i => {
+    $('step-'+i).style.display = i===n ? '' : 'none';
+    $('st'+i).classList.toggle('on', i<=n);
+  });
+  if(n===3) drawPreview();
+}
+
+function checkLogin(){
+  const v = String($('nw-login').value||'').trim().toLowerCase();
+  $('nw-login').value = v.replace(/[^a-z0-9_]/g,'');
+  if(!v){ $('nw-login-msg').textContent=''; return; }
+  if(existingLogins.has(v)){
+    $('nw-login-msg').className='hint warn';
+    $('nw-login-msg').textContent = 'Yeh username pehle se hai';
+  }else{
+    $('nw-login-msg').className='hint ok';
+    $('nw-login-msg').textContent = '@' + v + '.' + '' ;
+    $('nw-login-msg').textContent = loginEmail(v) + ' — theek hai';
+  }
+}
+
+function addRow(kind){
+  const map = {mn:'menu', cu:'customers', sp:'suppliers'};
+  NEW[map[kind]].push(kind==='mn' ? {name:'',price:''} : {name:'',phone:''});
+  refreshRows(kind);
+}
+function rmRow(kind, i){
+  const map = {mn:'menu', cu:'customers', sp:'suppliers'};
+  NEW[map[kind]].splice(i,1);
+  refreshRows(kind);
+}
+function editRow(kind, i, field, val){
+  const map = {mn:'menu', cu:'customers', sp:'suppliers'};
+  NEW[map[kind]][i][field] = val;
+}
+
+function refreshRows(kind){
+  const map = {mn:'menu', cu:'customers', sp:'suppliers'};
+  const list = NEW[map[kind]];
+  $(kind+'-count').textContent = list.length;
+  $(kind+'-rows').innerHTML = list.map((x,i) => kind==='mn'
+    ? `<div class="catrow">
+        <input placeholder="Naam" value="${esc(x.name)}" oninput="editRow('mn',${i},'name',this.value)">
+        <input class="amt" type="number" placeholder="Rs" value="${esc(x.price)}" oninput="editRow('mn',${i},'price',this.value)">
+        <button class="rm" onclick="rmRow('mn',${i})">×</button></div>`
+    : `<div class="catrow">
+        <input placeholder="Naam" value="${esc(x.name)}" oninput="editRow('${kind}',${i},'name',this.value)">
+        <input placeholder="Phone (marzi)" value="${esc(x.phone)}" oninput="editRow('${kind}',${i},'phone',this.value)" style="flex:0 0 130px">
+        <button class="rm" onclick="rmRow('${kind}',${i})">×</button></div>`
+  ).join('');
+}
+
+function drawPreview(){
+  const login = String($('nw-login').value||'').trim().toLowerCase();
+  const name  = String($('nw-name').value||'').trim();
+  const core  = $('nw-core').value;
+  const menu  = NEW.menu.filter(x=>x.name.trim() && Number(x.price)>0);
+  const cust  = NEW.customers.filter(x=>x.name.trim());
+  const sup   = NEW.suppliers.filter(x=>x.name.trim());
+
+  $('preview').innerHTML = `
+    <div class="row"><div class="nm"><b>${esc(name)||'—'}</b><span>@${esc(login)||'—'}</span></div>
+      <span class="tag">${esc(CORE_LABELS[core]||core)}</span></div>
+    <div class="row"><div class="nm">Menu</div><b>${menu.length}</b></div>
+    <div class="row"><div class="nm">Grahak</div><b>${cust.length}</b></div>
+    <div class="row"><div class="nm">Suppliers</div><b>${sup.length}</b></div>`;
+
+  const ok = login && name && !existingLogins.has(login);
+  $('create-go').disabled = !ok;
+  $('create-go').textContent = ok ? 'Client banayein' :
+    (!login || !name ? 'Naam aur username chahiye' : 'Username pehle se hai');
+}
+
+async function createClient(){
+  const login = String($('nw-login').value||'').trim().toLowerCase();
+  const name  = String($('nw-name').value||'').trim();
+  const core  = $('nw-core').value;
+  if(!login || !name) return;
+
+  const data = {
+    menu: NEW.menu.filter(x=>x.name.trim() && Number(x.price)>0)
+                  .map(x=>({name:x.name.trim(), price:Number(x.price)})),
+    customers: NEW.customers.filter(x=>x.name.trim())
+                  .map(x=>({name:x.name.trim(), phone:(x.phone||'').trim()})),
+    suppliers: NEW.suppliers.filter(x=>x.name.trim())
+                  .map(x=>({name:x.name.trim(), phone:(x.phone||'').trim()}))
+  };
+
+  $('create-go').disabled = true;
+  $('create-go').textContent = 'Ban raha hai…';
+  try{
+    const { error } = await sb.from('hf_setup').insert({ login, core_id:core, name, data });
+    if(error) throw error;
+    $('done-login').textContent = login;
+    $('done-email').textContent = loginEmail(login);
+    go('done');
+  }catch(e){
+    $('create-go').disabled = false;
+    $('create-go').textContent = e.message.includes('duplicate') ? 'Yeh username pehle se hai' : e.message;
+  }
+}
+
+function copyLogin(){
+  const v = $('done-login').textContent;
+  if(navigator.clipboard) navigator.clipboard.writeText(v);
+}
+
+/* ---- boot ---- */
+(function(){
+  // Client wali app se alag jagah — dono ka session kabhi ek doosre se na mile.
+  sb = supabase.createClient(SUPA_URL, SUPA_KEY,
+    { auth:{ persistSession:true, autoRefreshToken:true, storageKey:'hf-admin-auth' } });
+  sb.auth.getSession().then(async ({data}) => {
+    if(!data || !data.session) return;
+    session = data.session;
+    const { data: adm } = await sb.from('hf_admins').select('uid').maybeSingle();
+    if(!adm){ await sb.auth.signOut(); return; }
+    $('who').textContent = session.user.email;
+    $('s-login').classList.remove('on');
+    $('app').style.display = '';
+    go('list');
+  });
+})();
+</script>
+</body>
+</html>
