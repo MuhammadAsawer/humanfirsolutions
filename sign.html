@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ur"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rental Agreement — Dastakhat</title>
+<style>
+:root{--paper:#faf7f2;--ink:#1a1a1a;--steel:#6b6b6b;--line:#ddd7cc;--ok:#1d7a3e;--bad:#b3261e;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--paper:#16150f;--ink:#f0ece4;--steel:#9a958a;--line:#33312a;--ok:#5fd18a;--bad:#ff6b5e}}
+:root[data-theme="dark"]{--paper:#16150f;--ink:#f0ece4;--steel:#9a958a;--line:#33312a;--ok:#5fd18a;--bad:#ff6b5e}
+*{box-sizing:border-box}
+body{margin:0 auto;max-width:620px;background:var(--paper);color:var(--ink);
+  font:16px/1.55 system-ui,-apple-system,sans-serif;padding:18px 16px 40px}
+h1{font-size:19px;margin:0 0 3px}
+.sub{color:var(--steel);font-size:13.5px;margin:0 0 16px}
+.doc{border:1px solid var(--line);border-radius:14px;padding:15px;background:rgba(0,0,0,.02);
+  max-height:46vh;overflow:auto;-webkit-overflow-scrolling:touch}
+.doc pre{margin:0;white-space:pre-wrap;font:12.5px/1.65 ui-monospace,monospace}
+label{display:block;font-size:13.5px;color:var(--steel);margin:18px 0 6px}
+canvas{width:100%;height:170px;border:1px dashed var(--line);border-radius:12px;
+  touch-action:none;background:#fff;display:block}
+button{width:100%;padding:15px;border:1px solid var(--line);border-radius:12px;
+  background:transparent;color:var(--ink);font:inherit;font-weight:600;margin-top:10px}
+button.go{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+button:disabled{opacity:.45}
+.msg{margin-top:12px;font-size:14px}
+.msg.bad{color:var(--bad)} .msg.ok{color:var(--ok)}
+.done{text-align:center;padding:34px 10px}
+.done .tick{font-size:46px;line-height:1;color:var(--ok)}
+.done h2{margin:12px 0 6px;font-size:19px}
+.note{font-size:12px;color:var(--steel);border-top:1px solid var(--line);margin-top:22px;padding-top:13px}
+.hide{display:none}
+</style></head><body>
+
+<div id="load" class="sub">Khul raha hai…</div>
+
+<div id="bad" class="hide">
+  <h1>Link nahi khula</h1>
+  <p class="sub" id="bad-why">—</p>
+  <p class="note">Jis ne yeh link bheja hai un se naya link maangein.</p>
+</div>
+
+<div id="main" class="hide">
+  <h1>Rental Agreement</h1>
+  <p class="sub" id="who">—</p>
+
+  <div class="doc"><pre id="agree">—</pre></div>
+
+  <label>Neeche apni ungli se dastakhat karein</label>
+  <canvas id="pad" width="600" height="340"></canvas>
+  <button onclick="clearPad()">Saaf karein</button>
+  <button class="go" id="send" onclick="send()">Agreement qubool hai — dastakhat bhejein</button>
+  <p class="msg" id="msg"></p>
+  <p class="note">Dastakhat bhejne ka matlab hai ke aap ne upar likhi shara'it parh li hain aur qubool ki hain. Ek dafa bhejne ke baad badla nahi ja sakta.</p>
+</div>
+
+<div id="done" class="hide done">
+  <div class="tick">&#10003;</div>
+  <h2>Dastakhat pohanch gaye</h2>
+  <p class="sub">Shukriya. Ab aap yeh safha band kar sakte hain.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+var SUPA_URL = 'https://jfzcevknhgexowvligjd.supabase.co';
+var SUPA_KEY = 'sb_publishable_beEoYRGun96-gPMeglQLXQ_jWCYc1aP';
+
+var token = new URLSearchParams(location.search).get('t') || '';
+var sb = null, ink = false, drawing = false;
+
+function $(id){ return document.getElementById(id); }
+function show(id){ $(id).classList.remove('hide'); }
+function hide(id){ $(id).classList.add('hide'); }
+function fail(why){ hide('load'); hide('main'); $('bad-why').textContent = why; show('bad'); }
+
+/* Dastakhat ka khana — ungli/mouse dono chalte hain */
+function setupPad(){
+  var cv = $('pad'), ctx = cv.getContext('2d');
+  ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#1a1a1a';
+  function pos(e){
+    var r = cv.getBoundingClientRect();
+    return { x:(e.clientX-r.left)*(cv.width/r.width), y:(e.clientY-r.top)*(cv.height/r.height) };
+  }
+  cv.addEventListener('pointerdown', function(e){
+    drawing = true; ink = true; cv.setPointerCapture(e.pointerId);
+    var p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y);
+  });
+  cv.addEventListener('pointermove', function(e){
+    if(!drawing) return;
+    var p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke();
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(function(ev){
+    cv.addEventListener(ev, function(){ drawing = false; });
+  });
+}
+function clearPad(){
+  var cv = $('pad');
+  cv.getContext('2d').clearRect(0, 0, cv.width, cv.height);
+  ink = false; $('msg').textContent = '';
+}
+
+function send(){
+  if(!ink){ $('msg').className = 'msg bad'; $('msg').textContent = 'Pehle dastakhat karein'; return; }
+  $('send').disabled = true;
+  $('msg').className = 'msg'; $('msg').textContent = 'Bheja ja raha hai…';
+  var sig = $('pad').toDataURL('image/png');
+  sb.rpc('hf_sign_submit', { p_token: token, p_sig: sig }).then(function(res){
+    var d = res.data;
+    if(res.error){ throw new Error(res.error.message); }
+    if(!d || !d.ok){
+      $('msg').className = 'msg bad';
+      $('msg').textContent = (d && d.why) ? d.why : 'Nahi ja saka';
+      $('send').disabled = false;
+      return;
+    }
+    hide('main'); show('done');
+  }).catch(function(e){
+    $('msg').className = 'msg bad';
+    $('msg').textContent = 'Nahi ja saka: ' + e.message + ' — internet dekh kar dobara koshish karein';
+    $('send').disabled = false;
+  });
+}
+
+(function(){
+  if(!token){ fail('Link adhoora hai.'); return; }
+  try{ sb = supabase.createClient(SUPA_URL, SUPA_KEY, { auth:{ persistSession:false } }); }
+  catch(e){ fail('App load nahi hui.'); return; }
+
+  sb.rpc('hf_sign_fetch', { p_token: token }).then(function(res){
+    if(res.error) throw new Error(res.error.message);
+    var d = res.data;
+    if(!d || !d.ok){ fail((d && d.why) ? d.why : 'Link theek nahi'); return; }
+    if(d.signed){ hide('load'); show('done'); return; }
+    $('who').textContent = d.renter_name;
+    $('agree').textContent = d.agreement;
+    hide('load'); show('main');
+    setupPad();
+  }).catch(function(e){
+    fail('Internet ka masla lag raha hai — dobara koshish karein. (' + e.message + ')');
+  });
+})();
+</script>
+</body></html>
