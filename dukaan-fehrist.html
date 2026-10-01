@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="ur-Latn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dukaan ki Fehrist — HF Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Noto+Nastaliq+Urdu:wght@400..600&display=swap" rel="stylesheet">
+<style>
+/* Godown ka register: zaitooni jild (bori/gattay ka rang), thanda kaghaz */
+:root{--jild:#3B4A22;--kaghaz:#F0F1EC;--kaghaz-2:#E1E4DA;--siyahi:#1B1F16;--pencil:#687060;--surkh:#A8261D;--haldi:#B7800F;--line:rgba(27,31,22,.14)}
+@media(prefers-color-scheme:dark){:root{--jild:#B5C98C;--kaghaz:#121410;--kaghaz-2:#1B1E17;--siyahi:#E6E9E0;--pencil:#98A08E;--surkh:#EE8A7F;--haldi:#E6B04A;--line:rgba(230,233,224,.14)}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--kaghaz);color:var(--siyahi)}
+body{font-family:"Archivo",system-ui,sans-serif;font-size:16px;line-height:1.45;font-variation-settings:"wdth" 96;font-variant-numeric:tabular-nums}
+.wrap{max-width:560px;margin:0 auto;padding:0 16px calc(96px + env(safe-area-inset-bottom))}
+.ur{font-family:"Noto Nastaliq Urdu",serif;font-size:.8em;color:var(--pencil)}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--haldi);outline-offset:2px}
+.top{margin:0 -16px 14px;padding:calc(16px + env(safe-area-inset-top)) 16px 14px;background:var(--jild);color:var(--kaghaz)}
+@media(prefers-color-scheme:dark){.top{color:#11140C}}
+.top h1{margin:0;font-size:20px;font-variation-settings:"wdth" 112}
+.top p{margin:2px 0 0;font-size:12.5px;opacity:.8}
+.scr{display:none}.scr.on{display:block}
+input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:8px;background:var(--kaghaz);color:var(--siyahi);font:inherit;font-size:16px}
+label{display:block;font-size:12.5px;color:var(--pencil);margin:12px 0 5px}
+.search{position:sticky;top:0;z-index:4;background:var(--kaghaz);padding:8px 0}
+.chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.chip{flex:none;padding:7px 12px;border:1.5px solid var(--line);border-radius:6px;background:transparent;color:var(--siyahi);font-size:13.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.chip.on{background:var(--jild);border-color:var(--jild);color:var(--kaghaz)}
+@media(prefers-color-scheme:dark){.chip.on{color:#11140C}}
+h2{font-size:14px;margin:20px 0 4px;display:flex;justify-content:space-between;font-variation-settings:"wdth" 110}
+h2 em{font-style:normal;font-weight:400;color:var(--pencil);font-size:12px}
+.row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.row .nm{flex:1;min-width:0}
+.row .nm small{display:block;color:var(--pencil);font-size:12px}
+.row .nm small.warn{color:var(--surkh)}
+.tick{width:26px;height:26px;border:2px solid var(--pencil);border-radius:6px;flex:none;display:grid;place-items:center;cursor:pointer;background:transparent;color:transparent;font-weight:800}
+.tick.on{background:var(--jild);border-color:var(--jild);color:var(--kaghaz)}
+@media(prefers-color-scheme:dark){.tick.on{color:#11140C}}
+.edit{border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--siyahi);padding:6px 10px;font-size:13px;cursor:pointer}
+.empty{padding:14px 0;color:var(--pencil);font-size:14px}
+.hint{font-size:12.5px;color:var(--pencil);margin:6px 0 0}
+.hint.warn{color:var(--surkh)}
+.big{font-size:44px;font-weight:800;font-variation-settings:"wdth" 70;margin:0;line-height:1}
+.stat{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}
+.stat b{font-size:17px}
+.btn{width:100%;padding:13px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--siyahi);font-weight:600;cursor:pointer;margin-top:8px}
+.btn.go{background:var(--jild);border-color:var(--jild);color:var(--kaghaz)}
+@media(prefers-color-scheme:dark){.btn.go{color:#11140C}}
+.nav{position:fixed;inset-inline:0;bottom:0;max-width:560px;margin:0 auto;display:flex;background:var(--kaghaz);border-top:1px solid var(--line);padding:6px 8px calc(8px + env(safe-area-inset-bottom));z-index:6}
+.nav button{flex:1;padding:8px 2px;border:0;background:transparent;color:var(--pencil);font-size:12.5px;font-weight:600;cursor:pointer;border-radius:8px}
+.nav button b{display:block;font-size:17px;color:var(--siyahi)}
+.nav button.on{background:var(--kaghaz-2);color:var(--siyahi)}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:none;align-items:flex-end;justify-content:center}
+.sheet.on{display:flex}
+.box{background:var(--kaghaz);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:14px 14px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.box h3{margin:0 0 4px;font-size:18px}
+.urow{display:grid;grid-template-columns:1.1fr .8fr 1fr 1fr 28px;gap:6px;align-items:end;margin-top:8px}
+.urow input{padding:9px 8px;font-size:15px}
+.urow .x{border:0;background:none;color:var(--surkh);font-size:20px;cursor:pointer;padding:0 0 8px}
+.uhead{display:grid;grid-template-columns:1.1fr .8fr 1fr 1fr 28px;gap:6px;font-size:11.5px;color:var(--pencil);margin-top:10px}
+.acts{display:flex;gap:8px;margin-top:14px}.acts .btn{margin:0}
+.login{max-width:400px;margin:0 auto;padding:14vh 6px 40px}
+.login h1{font-size:28px;margin:0;font-variation-settings:"wdth" 115}
+#sync{display:inline-flex;align-items:center;gap:6px;font-size:12px;opacity:.9;margin-top:4px}
+#sync i{width:8px;height:8px;border-radius:50%;background:#C9C9C9;display:inline-block}
+#sync.ok i{background:#9BE3A8}#sync.wait i{background:#F2C14E}#sync.off i{background:#FF9F94}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));background:var(--siyahi);color:var(--kaghaz);padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none;max-width:88vw;text-align:center}
+.toast.on{opacity:1}
+@media(prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<section class="scr" id="s-login">
+  <div class="login">
+    <h1>Dukaan ki Fehrist</h1><p class="hint">HF Solutions — login karein, fehrist cloud mein mehfooz rahegi</p>
+    <label for="lg-u">Username</label><input id="lg-u" autocapitalize="none" autocomplete="username">
+    <label for="lg-p">Password</label><input id="lg-p" type="password" autocomplete="current-password">
+    <button class="btn go" id="lg-go" onclick="doLogin()">Andar aayein</button>
+    <p class="hint warn" id="lg-msg"></p>
+  </div>
+</section>
+
+<section class="scr on" id="s-items">
+  <div class="top"><h1 id="shopname">Dukaan ki Fehrist</h1><p>Jo maal dukaan mein hai us par tick lagayein</p><span id="sync"><i></i><span id="syncmsg">—</span></span></div>
+  <div class="search">
+    <input id="q" placeholder="Dhoondein — naam, brand ya size" oninput="drawItems()" autocomplete="off">
+    <div class="chips" id="cats" style="margin-top:8px"></div>
+  </div>
+  <div id="list"></div>
+  <button class="btn" onclick="editItem(null)">+ Apni cheez jorein (fehrist mein nahi)</button>
+</section>
+
+<section class="scr" id="s-cust">
+  <div class="top"><h1>Grahak</h1><p>Jin dukaanon/logon ko maal dete hain <span class="ur">گاہک</span></p></div>
+  <div id="custlist"></div>
+  <button class="btn go" onclick="editParty('customers',null)">+ Naya grahak</button>
+</section>
+
+<section class="scr" id="s-sup">
+  <div class="top"><h1>Supplier</h1><p>Jin companies/logon se maal lete hain <span class="ur">سپلائر</span></p></div>
+  <div id="suplist"></div>
+  <button class="btn go" onclick="editParty('suppliers',null)">+ Naya supplier</button>
+</section>
+
+<section class="scr" id="s-sum">
+  <div class="top"><h1>Khulasa aur file</h1><p>Kitna kaam hua, aur software ke liye file</p></div>
+  <label for="shop">Dukaan ka naam</label><input id="shop" oninput="S.shop=this.value;save();$('shopname').textContent=S.shop||'Dukaan ki Fehrist'">
+  <div id="sum"></div>
+  <h2>Roz ka andaza</h2>
+  <div class="grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div><label for="bpd">Roz ke bill (taqreeban)</label><input id="bpd" type="number" inputmode="numeric" oninput="S.billsPerDay=this.value;save();drawSum()"></div>
+    <div><label for="ipb">Ek bill mein aam cheezein</label><input id="ipb" type="number" inputmode="numeric" oninput="S.itemsPerBill=this.value;save();drawSum()"></div>
+  </div>
+  <div id="est"></div>
+  <h2>File</h2>
+  <button class="btn go" onclick="exportJSON()">Software ke liye file (.json)</button>
+  <button class="btn" onclick="exportCSV()">Excel mein dekhne ke liye (3 CSV)</button>
+  <button class="btn" onclick="$('imp').click()">Purani file wapas layein</button>
+  <input type="file" id="imp" accept=".json,application/json" style="display:none" onchange="importJSON(this)">
+  <p class="hint">Har tabdeeli khud-ba-khud cloud mein jati hai (internet na ho to phone par rehti hai aur internet aate hi chali jati hai). Login sirf <b id="who">—</b> ka hai — fehrist sirf yehi login aur HF Solutions ka admin dekh sakta hai.</p>
+  <button class="btn" onclick="pushNow(true)">Abhi cloud mein bhejein</button>
+  <button class="btn" style="color:var(--surkh)" onclick="doLogout()">Logout</button>
+</section>
+
+</div>
+
+<nav class="nav" aria-label="Hisse">
+  <button class="on" data-s="items" onclick="go('items')"><b id="n-items">0</b>Maal</button>
+  <button data-s="cust" onclick="go('cust')"><b id="n-cust">0</b>Grahak</button>
+  <button data-s="sup" onclick="go('sup')"><b id="n-sup">0</b>Supplier</button>
+  <button data-s="sum" onclick="go('sum')"><b>&#8595;</b>Khulasa</button>
+</nav>
+<div class="sheet" id="sheet" onclick="if(event.target===this)closeSheet()"><div class="box" id="box"></div></div>
+<div class="toast" id="toast" role="status"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+const MASTER=[{"c":"Atta, Chawal, Daal","u":"kb","i":["Atta (khula)","Sunridge Atta 10kg@bag","Sunridge Atta 20kg@bag","Fauji Atta 10kg@bag","Fauji Atta 20kg@bag","Maida","Sooji","Besan","Chawal Basmati Super Kernel","Chawal Sella","Chawal Tota (Broken)","Guard Basmati Rice 5kg@pcc","Falak Basmati Rice 5kg@pcc","Daal Chana","Daal Masoor","Daal Mash","Daal Moong","Kala Chana","Safaid Chana (Kabuli)","Lobia","Rajma","Dalia"]},{"c":"Cheeni, Namak, Gur","u":"kb","i":["Cheeni (khula)","Gur","Shakkar","Brown Sugar 1kg@pcc","Namak (khula)","Shan Iodized Salt 800g@pdc","National Iodized Salt 800g@pdc","Pink Himalayan Salt 800g@pdc"]},{"c":"Ghee aur Tel","u":"pcc","i":["Dalda Banaspati 1kg pouch","Dalda Cooking Oil 1L pouch","Dalda Banaspati 5kg tin@t","Dalda Cooking Oil 5L bottle","Habib Banaspati 1kg pouch","Habib Cooking Oil 1L pouch","Habib Cooking Oil 5L bottle","Sufi Banaspati 1kg pouch","Sufi Cooking Oil 1L pouch","Eva Banaspati 1kg pouch","Eva Cooking Oil 1L pouch","Kisan Banaspati 1kg pouch","Kisan Cooking Oil 1L pouch","Meezan Banaspati 1kg pouch","Meezan Cooking Oil 1L pouch","Seasons Canola Oil 1L pouch","Soya Supreme Cooking Oil 1L pouch","Ghee (khula)@kb","Cooking Oil (khula)@lt","Banaspati 16kg tin@t","Cooking Oil 16L tin@t","Sarson ka Tel 1L","Desi Ghee 1kg"]},{"c":"Chai aur Coffee","u":"pdc","i":["Tapal Danedar 95g","Tapal Danedar 190g","Tapal Danedar 475g","Tapal Danedar 950g","Tapal Family Mixture 475g","Tapal Tezdum 475g","Lipton Yellow Label 95g","Lipton Yellow Label 190g","Lipton Yellow Label 475g","Lipton Yellow Label 950g","Supreme Tea 475g","Vital Tea 475g","Tapal Green Tea 30 bags","Lipton Green Tea 30 bags","Chai Patti (khula)@kb","Nescafe Classic 50g","Nescafe 3in1 sachet"]},{"c":"Doodh aur Whitener","u":"pcc","i":["Olpers Milk 1L","Olpers Milk 250ml","Nestle Milkpak 1L","Nestle Milkpak 250ml","Haleeb Milk 1L","Dayfresh Milk 1L","Nurpur Milk 1L","Everyday Whitener 220g","Everyday Whitener 850g","Tarang Tea Whitener 1L","Nido Milk Powder 390g","Nido Milk Powder 900g","Olpers Cream 200ml","Nestle Cream 200ml"]},{"c":"Masala","u":"pdc","i":["Shan Biryani Masala","Shan Bombay Biryani","Shan Chicken Masala","Shan Nihari Masala","Shan Karahi Masala","Shan Tikka Masala","Shan Qorma Masala","Shan Haleem Mix","National Biryani Masala","National Chicken Masala","National Karahi Masala","National Qorma Masala","Mehran Biryani Masala","Lal Mirch Powder (khula)@kb","Haldi Powder (khula)@kb","Dhania Powder (khula)@kb","Garam Masala (khula)@kb","Zeera Sabut (khula)@kb","Kali Mirch (khula)@kb","National Lal Mirch 200g","National Haldi 200g","National Dhania 200g","Shan Lal Mirch 200g"]},{"c":"Sauce, Ketchup, Achaar","u":"pcc","i":["National Ketchup 800g","Mitchell's Ketchup 800g","Knorr Ketchup 800g","Young's Mayonnaise 500ml","Young's Mayonnaise 1L","National Chilli Garlic Sauce 800g","Shangrila Soya Sauce","National Achaar Mix 1kg","Shan Achaar Mix 1kg","Mitchell's Jam 440g","Mitchell's Jam 1kg","Rooh Afza 800ml","Jam-e-Shirin 800ml","Tang Orange 500g","Tang Mango 500g"]},{"c":"Noodles, Pasta, Custard","u":"pdc","i":["Knorr Chicken Noodles","Knorr Masala Noodles","Maggi Chicken Noodles","Shan Noodles","Bake Parlor Macaroni 400g","Bake Parlor Spaghetti 400g","Rafhan Custard Vanilla 300g","Rafhan Jelly","Rafhan Corn Flour 300g","Knorr Chicken Corn Soup","Nestle Cerelac Wheat 175g","Nestle Cerelac Rice 175g","National Vermicelli (Seviyan)"]},{"c":"Biscuit aur Snacks","u":"pdc","i":["Peek Freans Sooper","Peek Freans Rio","Peek Freans Gluco","Peek Freans Marie","Peek Freans Chocolicious","Peek Freans Party","LU Prince","LU Tuc","LU Candi","LU Gala","LU Oreo","LU Wheatable","Bisconni Cocomo","Bisconni Chocolate Chip","Bisconni Rite","EBM Sooper Rusk","Lay's Classic","Lay's Masala","Kurkure Chutney Chaska","Slanty","Super Crisp","Cadbury Dairy Milk","Candyland Toffee Jar","Hilal Toffee Jar","Nimco (khula)@kb"]},{"c":"Mashroobat (Drinks)","u":"bc","i":["Coca-Cola 1.5L","Coca-Cola 500ml","Pepsi 1.5L","Pepsi 500ml","7up 1.5L","Sprite 1.5L","Fanta 1.5L","Mountain Dew 1.5L","Sting 500ml","Nestle Pure Life 1.5L","Nestle Pure Life 500ml","Aquafina 1.5L","Aquafina 500ml","Nestle Fruita Vitals 1L","Shezan Mango 250ml","Pakola Ice Cream Soda 500ml"]},{"c":"Kapre Dhone ka Saman","u":"pcc","i":["Surf Excel 500g","Surf Excel 1kg","Surf Excel 2kg","Ariel 500g","Ariel 1kg","Bonus Tristar 1kg","Brite 1kg","Express Power 1kg","Wheel 1kg","Surf (khula)@kb","Kapre dhone ka sabun (bar)@pdc","Comfort Fabric Softener 1L"]},{"c":"Nahane ka Saman","u":"pdc","i":["Lux Soap","Lifebuoy Soap","Safeguard Soap","Capri Soap","Dettol Soap","Palmolive Soap","Sunsilk Shampoo 185ml","Head & Shoulders 185ml","Pantene Shampoo 185ml","Clear Shampoo 185ml","Sunsilk Shampoo Sachet","Colgate Toothpaste 100g","Close Up Toothpaste 100g","Sensodyne Toothpaste","Medicam Toothpaste","Toothbrush","Gillette Blade","Treet Blade","Fair & Lovely","Vaseline Lotion","Parachute Coconut Oil","Dalda Hair Oil"]},{"c":"Safai ka Saman","u":"pcc","i":["Vim Bar","Vim Liquid 500ml","Max Bar","Harpic 500ml","Finis Phenyl 1L","Dettol Liquid 500ml","Colin Glass Cleaner","Mortein Spray","Kingtox Spray","Mortein Coil@pdc","Tissue Box (Rose Petal)","Toilet Roll@pdc","Garbage Bags","Match Box (Maachis)@pdc","Mombatti (Candle)@pdc"]},{"c":"Bachon ka Saman","u":"pcc","i":["Pampers Size 3","Pampers Size 4","Molfix Size 3","Molfix Size 4","Canbebe Size 3","Canbebe Size 4","Always Pads","Butterfly Pads","Johnson Baby Powder"]},{"c":"Dry Fruit aur Mewa","u":"kb","i":["Badam","Kaju","Pista","Akhrot","Kishmish","Khajoor","Chilgoza","Makhane"]},{"c":"Anday aur Doosra","u":"pdc","i":["Anday (Eggs)@egg","Shehad (Honey) 500g","Sirka (Vinegar) 800ml","Baking Powder","Khameer (Yeast)"]}];
+/* =========================================================================
+   HF SOLUTIONS — DUKAAN KI FEHRIST (software se pehle ki tayyari)
+   Sab kuch sirf isi browser mein; kahin nahi bheja jata. File bana kar
+   software mein seedha import. Stock aur bakaya software mein ek dafa
+   alag darj hote hain — yahan sirf likhe jate hain (andaze aur import ke liye).
+   ========================================================================= */
+const KEY='hf_fehrist_v1';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rs=n=>'Rs '+Math.round(Number(n)||0).toLocaleString('en-PK');
+const PRESET={
+  pdc:[['pc',1],['Darjan',12],['Carton',null]], pcc:[['pc',1],['Carton',null]], kb:[['kg',1],['Bori',null]],
+  bag:[['Bag',1]], t:[['Tin',1]], lt:[['Liter',1],['Drum',null]], bc:[['Bottle',1],['Carton',null]],
+  egg:[['Anda',1],['Darjan',12],['Tray',30],['Peti',null]]
+};
+const keyOf=s=>String(s||'').trim().toLowerCase();
+
+/* Master fehrist ko ek dafa khol lo: naam, category, preset */
+const ALL=[]; MASTER.forEach((c,ci)=>c.i.forEach(raw=>{ const [nm,code]=raw.split('@'); ALL.push({name:nm.trim(),cat:c.c,code:code||c.u}); }));
+
+/* Phone par har login ki alag copy (KEY:uid). Login se pehle ka kaam KEY par
+   rehta hai aur pehle login par usi login ki fehrist ban jata hai. */
+let UID=null;
+let S=load();
+function blank(){ return {v:1, shop:'', picked:{}, customers:[], suppliers:[], billsPerDay:'', itemsPerBill:'', cloudRev:0, dirty:false}; }
+function lkey(){ return UID ? KEY+':'+UID : KEY; }
+function load(){ try{ const r=localStorage.getItem(lkey()); if(r){ const o=JSON.parse(r); if(o&&o.v===1) return Object.assign(blank(),o); } }catch(e){} return blank(); }
+function store(){ try{ localStorage.setItem(lkey(),JSON.stringify(S)); }catch(e){ toast('Phone par mehfooz nahi hua: '+e.message); } }
+function save(){ S.dirty=true; store(); counts(); schedulePush(); }
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toast.t); toast.t=setTimeout(()=>t.classList.remove('on'),2600); }
+function closeSheet(){ $('sheet').classList.remove('on'); }
+function openSheet(h){ $('box').innerHTML=h; $('sheet').classList.add('on'); }
+
+function unitsFor(code){ return (PRESET[code]||PRESET.pcc).map(([n,q])=>({n,q,thok:'',parchoon:''})); }
+function missing(it){ return it.units.filter(u=>!(Number(u.q)>0)).map(u=>u.n); }
+
+/* ---- navigation ---- */
+let screen='items', CAT='__mine';
+function go(s){
+  screen=s; document.querySelectorAll('.scr').forEach(x=>x.classList.remove('on')); $('s-'+s).classList.add('on');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
+  window.scrollTo(0,0);
+  ({items:drawItems,cust:()=>drawParties('customers'),sup:()=>drawParties('suppliers'),sum:drawSum}[s])();
+}
+function counts(){ $('n-items').textContent=Object.keys(S.picked).length; $('n-cust').textContent=S.customers.length; $('n-sup').textContent=S.suppliers.length; }
+
+/* =========================================================================
+   MAAL
+   ========================================================================= */
+function drawCats(){
+  const cats=['__mine','__all',...MASTER.map(c=>c.c)];
+  const nm={__mine:'Mera maal ('+Object.keys(S.picked).length+')',__all:'Sab'};
+  $('cats').innerHTML=cats.map(c=>'<button class="chip '+(CAT===c?'on':'')+'" onclick="CAT=\''+c.replace(/'/g,"\\'")+'\';drawItems()">'+esc(nm[c]||c)+'</button>').join('');
+}
+function rowsFor(list){
+  return list.map(it=>{
+    const k=keyOf(it.name), p=S.picked[k], on=!!p;
+    const miss=on?missing(p):[];
+    const sub=on ? p.units.map(u=>u.n+(Number(u.q)>1?' ('+u.q+')':'')+(u.thok?' '+rs(u.thok):'')).join(' · ') : '';
+    return '<div class="row"><button class="tick '+(on?'on':'')+'" aria-label="'+(on?'hatayein':'chunein')+'" onclick="toggle(\''+esc(k).replace(/&#39;/g,"\\'")+'\')">&#10003;</button>'+
+      '<div class="nm">'+esc(on?p.name:it.name)+(on?'<small>'+esc(sub)+'</small>':'')+(miss.length?'<small class="warn">'+esc(miss.join(', '))+' mein kitne? — likhein</small>':'')+'</div>'+
+      (on?'<button class="edit" onclick="editItem(\''+esc(k).replace(/&#39;/g,"\\'")+'\')">Unit / rate</button>':'')+'</div>';
+  }).join('');
+}
+function drawItems(){
+  drawCats();
+  const q=keyOf($('q').value);
+  const custom=Object.entries(S.picked).filter(([k,p])=>p.custom).map(([k,p])=>({name:p.name,cat:p.cat,code:null}));
+  let pool=[...ALL,...custom];
+  if(q) pool=pool.filter(it=>keyOf(it.name).includes(q)||keyOf(it.cat).includes(q));
+  let html='';
+  if(CAT==='__mine' && !q){
+    const mine=pool.filter(it=>S.picked[keyOf(it.name)]);
+    if(!mine.length) html='<div class="empty">Abhi koi maal nahi chuna. Upar "Sab" ya kisi qism par jayein aur jo cheezein dukaan mein hain un par tick lagayein. Na mile to neeche se apni cheez jorein.</div>';
+    else { const byCat={}; mine.forEach(it=>{ const c=(S.picked[keyOf(it.name)].cat)||'Doosra'; (byCat[c]=byCat[c]||[]).push(it); });
+      Object.entries(byCat).forEach(([c,l])=>html+='<h2>'+esc(c)+' <em>'+l.length+'</em></h2>'+rowsFor(l)); }
+  } else {
+    const groups=CAT==='__all'||CAT==='__mine'?MASTER.map(c=>c.c).concat(['Apni cheezein']):[CAT];
+    groups.forEach(g=>{
+      const l=pool.filter(it=>g==='Apni cheezein' ? (S.picked[keyOf(it.name)]||{}).custom && !MASTER.some(c=>c.c===it.cat) : it.cat===g);
+      if(l.length) html+='<h2>'+esc(g)+' <em>'+l.filter(it=>S.picked[keyOf(it.name)]).length+'/'+l.length+'</em></h2>'+rowsFor(l);
+    });
+    if(!html) html='<div class="empty">Kuch nahi mila. Neeche "Apni cheez jorein" se likh dein.</div>';
+  }
+  $('list').innerHTML=html;
+}
+function toggle(k){
+  if(S.picked[k]){
+    if(S.picked[k].custom && !confirm('Yeh apni joRi hui cheez hai — hata dein?')) return;
+    delete S.picked[k];
+  } else {
+    const it=ALL.find(x=>keyOf(x.name)===k); if(!it) return;
+    S.picked[k]={name:it.name,cat:it.cat,units:unitsFor(it.code)};
+  }
+  save(); drawItems();
+}
+function editItem(k){
+  const p=k?S.picked[k]:{name:'',cat:'',units:unitsFor('pcc'),custom:true};
+  const cats=MASTER.map(c=>c.c);
+  openSheet('<h3>'+(k?esc(p.name):'Apni cheez')+'</h3>'+
+    '<label for="e-nm">Naam (brand + size)</label><input id="e-nm" value="'+esc(p.name)+'">'+
+    '<label for="e-cat">Qism</label><input id="e-cat" list="dl-cats" value="'+esc(p.cat)+'"><datalist id="dl-cats">'+cats.map(c=>'<option value="'+esc(c)+'">').join('')+'</datalist>'+
+    '<h2>Unit <em>4 tak</em></h2><p class="hint">Pehli unit sab se chhoti (pc / kg / liter) — stock isi mein ginega. Baqi unit mein likhein ke un mein pehli wali kitni hain: Darjan = 12, Carton = 48, Bori = 50…</p>'+
+    '<div class="uhead"><span>Unit</span><span>Kitne</span><span>Thok rate</span><span>Parchoon</span><span></span></div>'+
+    '<div id="urows"></div><button class="btn" onclick="addUnit()">+ Unit</button>'+
+    '<p class="hint warn" id="e-msg"></p>'+
+    '<div class="acts"><button class="btn" onclick="closeSheet()">Band</button><button class="btn go" onclick="saveItem('+(k?'\''+esc(k).replace(/&#39;/g,"\\'")+'\'':'null')+')">Mehfooz</button></div>');
+  EU=p.units.map(u=>Object.assign({},u)); drawUnits();
+}
+let EU=[];
+function drawUnits(){
+  $('urows').innerHTML=EU.map((u,i)=>'<div class="urow">'+
+    '<input value="'+esc(u.n)+'" aria-label="unit" oninput="EU['+i+'].n=this.value">'+
+    '<input type="number" inputmode="numeric" value="'+(u.q==null?'':u.q)+'" '+(i===0?'disabled':'')+' aria-label="kitne" placeholder="?" oninput="EU['+i+'].q=this.value">'+
+    '<input type="number" inputmode="decimal" value="'+esc(u.thok)+'" aria-label="thok rate" oninput="EU['+i+'].thok=this.value">'+
+    '<input type="number" inputmode="decimal" value="'+esc(u.parchoon)+'" aria-label="parchoon rate" oninput="EU['+i+'].parchoon=this.value">'+
+    (i===0?'<span></span>':'<button class="x" aria-label="hatayein" onclick="EU.splice('+i+',1);drawUnits()">&times;</button>')+'</div>').join('');
+}
+function addUnit(){ if(EU.length>=4){ toast('4 unit kaafi hain'); return; } EU.push({n:'',q:null,thok:'',parchoon:''}); drawUnits(); }
+function saveItem(k){
+  const name=$('e-nm').value.trim(), cat=$('e-cat').value.trim()||'Doosra';
+  if(!name){ $('e-msg').textContent='Naam likhein'; return; }
+  const units=EU.map((u,i)=>({n:String(u.n||'').trim(),q:i===0?1:(u.q===''||u.q==null?null:Number(u.q)),thok:u.thok===''?'':Number(u.thok),parchoon:u.parchoon===''?'':Number(u.parchoon)}));
+  if(units.some(u=>!u.n)){ $('e-msg').textContent='Har unit ka naam likhein'; return; }
+  if(new Set(units.map(u=>keyOf(u.n))).size!==units.length){ $('e-msg').textContent='Do unit ka ek naam nahi ho sakta'; return; }
+  if(units.slice(1).some(u=>u.q!=null&&!(u.q>1&&Math.floor(u.q)===u.q))){ $('e-msg').textContent='"Kitne" poora number aur 1 se zyada ho'; return; }
+  const nk=keyOf(name);
+  if(nk!==k && S.picked[nk]){ $('e-msg').textContent='Is naam ki cheez pehle se fehrist mein hai'; return; }
+  const old=k?S.picked[k]:null;
+  if(k&&nk!==k) delete S.picked[k];
+  S.picked[nk]={name,cat,units,custom:old?(old.custom||nk!==k):true};
+  save(); closeSheet(); drawItems(); toast(name+' mehfooz');
+}
+
+/* =========================================================================
+   GRAHAK / SUPPLIER
+   ========================================================================= */
+function drawParties(kind){
+  const L=S[kind], el=kind==='customers'?'custlist':'suplist';
+  $(el).innerHTML=L.length ? L.map((p,i)=>'<div class="row" onclick="editParty(\''+kind+'\','+i+')" style="cursor:pointer"><div class="nm">'+esc(p.name)+
+      '<small>'+esc([p.area,p.phone].filter(Boolean).join(' · ')||'—')+'</small></div>'+(Number(p.opening)?'<b>'+rs(p.opening)+'</b>':'')+'</div>').join('')
+    : '<div class="empty">'+(kind==='customers'?'Koi grahak nahi likha.':'Koi supplier nahi likha.')+'</div>';
+}
+function editParty(kind,i){
+  const p=i==null?{name:'',phone:'',area:'',opening:'',note:''}:S[kind][i];
+  const cu=kind==='customers';
+  openSheet('<h3>'+(i==null?(cu?'Naya grahak':'Naya supplier'):esc(p.name))+'</h3>'+
+    '<label for="p-nm">Naam</label><input id="p-nm" value="'+esc(p.name)+'">'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div><label for="p-ph">Phone</label><input id="p-ph" inputmode="tel" value="'+esc(p.phone)+'"></div>'+
+    '<div><label for="p-ar">'+(cu?'Ilaqa / route':'Shehar')+'</label><input id="p-ar" value="'+esc(p.area)+'"></div></div>'+
+    '<label for="p-ob">'+(cu?'Purana bakaya — in se lena hai (Rs)':'Purana bakaya — inhein dena hai (Rs)')+'</label><input id="p-ob" type="number" inputmode="decimal" value="'+esc(p.opening)+'">'+
+    '<p class="hint">Sirf andaze ke liye. Software mein yeh har ek ka ek dafa, tareekh ke saath darj hoga.</p>'+
+    '<label for="p-nt">Note</label><input id="p-nt" value="'+esc(p.note)+'">'+
+    '<p class="hint warn" id="p-msg"></p>'+
+    '<div class="acts">'+(i!=null?'<button class="btn" style="color:var(--surkh)" onclick="delParty(\''+kind+'\','+i+')">Hatayein</button>':'<button class="btn" onclick="closeSheet()">Band</button>')+
+    '<button class="btn go" onclick="saveParty(\''+kind+'\','+(i==null?'null':i)+')">Mehfooz</button></div>');
+}
+function saveParty(kind,i){
+  const name=$('p-nm').value.trim();
+  if(!name){ $('p-msg').textContent='Naam likhein'; return; }
+  if(S[kind].some((x,j)=>j!==i&&keyOf(x.name)===keyOf(name))){ $('p-msg').textContent='Yeh naam pehle se hai — do ek jaise naam ho to ilaqa saath likhein (jaise "Butt Store Mandra")'; return; }
+  const ob=$('p-ob').value;
+  if(ob!==''&&!(Number(ob)>=0)){ $('p-msg').textContent='Bakaya theek likhein'; return; }
+  const rec={name,phone:$('p-ph').value.trim(),area:$('p-ar').value.trim(),opening:ob===''?'':Number(ob),note:$('p-nt').value.trim()};
+  if(i==null) S[kind].push(rec); else S[kind][i]=rec;
+  save(); closeSheet(); drawParties(kind); toast(name+' mehfooz');
+}
+function delParty(kind,i){ if(!confirm(S[kind][i].name+' ko fehrist se hata dein?')) return; S[kind].splice(i,1); save(); closeSheet(); drawParties(kind); }
+
+/* =========================================================================
+   KHULASA + FILE
+   ========================================================================= */
+function drawSum(){
+  $('shop').value=S.shop||''; $('bpd').value=S.billsPerDay||''; $('ipb').value=S.itemsPerBill||'';
+  const items=Object.values(S.picked), units=items.reduce((s,p)=>s+p.units.length,0);
+  const inc=items.filter(p=>missing(p).length), noRate=items.filter(p=>!p.units.some(u=>u.thok!==''||u.parchoon!==''));
+  const rec=S.customers.reduce((s,p)=>s+(Number(p.opening)||0),0), pay=S.suppliers.reduce((s,p)=>s+(Number(p.opening)||0),0);
+  $('sum').innerHTML='<h2>Ab tak</h2>'+
+    '<div class="stat"><span>Maal</span><b>'+items.length+' cheezein · '+units+' unit</b></div>'+
+    '<div class="stat"><span>Grahak</span><b>'+S.customers.length+'</b></div>'+
+    '<div class="stat"><span>Supplier</span><b>'+S.suppliers.length+'</b></div>'+
+    '<div class="stat"><span>Grahakon se purana lena</span><b>'+rs(rec)+'</b></div>'+
+    '<div class="stat"><span>Suppliers ka purana dena</span><b>'+rs(pay)+'</b></div>'+
+    (inc.length?'<p class="hint warn">'+inc.length+' cheezon mein Carton/Bori ki tadaad baqi hai (Maal mein surkh nishan).</p>':'')+
+    (noRate.length?'<p class="hint">'+noRate.length+' cheezon ka koi rate nahi likha — chal jayega, rate baad mein bhi likh sakte hain.</p>':'');
+  const b=Number(S.billsPerDay)||0, ip=Number(S.itemsPerBill)||0;
+  if(b&&ip){
+    const perBill=ip+5, perDay=b*perBill+Math.round(b*0.3)*4, perYear=perDay*300;
+    $('est').innerHTML='<div class="stat"><span>Roz ki entries (andaza)</span><b>~'+perDay.toLocaleString('en-PK')+'</b></div>'+
+      '<div class="stat"><span>Saal ki (300 din)</span><b>~'+perYear.toLocaleString('en-PK')+'</b></div>'+
+      '<p class="hint">Ek bill ki cheezon ke ilawa hisaab ki ~5 lines aur wasooli/kharidari mila kar. Yeh sirf andaza hai.</p>';
+  } else $('est').innerHTML='<p class="hint">Dono khane bharein to roz aur saal ki entries ka andaza aa jayega.</p>';
+}
+/* Software ke liye: har cheez ki poori unit fehrist (aage ke liye) + aaj ke
+   software ki zabaan (unit / packName / packSize / thokPrice / salePrice) */
+function productOut(p){
+  const base=p.units[0], packs=p.units.slice(1).filter(u=>Number(u.q)>1).sort((a,b)=>b.q-a.q);
+  const big=packs[0];
+  const o={name:p.name, category:p.cat, unit:base.n,
+    units:p.units.map(u=>({name:u.n, qty:u.q==null?null:Number(u.q), thokRate:u.thok===''?null:Number(u.thok), parchoonRate:u.parchoon===''?null:Number(u.parchoon)}))};
+  // Koi bhi likha hua thok rate → fi-chhoti-unit → baRi unit ka rate
+  const withRate=p.units.find(u=>u.thok!==''&&Number(u.q)>0);
+  const perBase=withRate?Number(withRate.thok)/Number(withRate.q):null;
+  if(big){ o.packName=big.n; o.packSize=Number(big.q);
+    if(big.thok!=='') o.thokPrice=Number(big.thok); else if(perBase!=null) o.thokPrice=Math.round(perBase*big.q*100)/100; }
+  else if(perBase!=null) o.thokPrice=Math.round(perBase*100)/100;
+  if(base.parchoon!=='') o.salePrice=Number(base.parchoon);
+  if(p.custom) o.custom=true;
+  return o;
+}
+function payload(){
+  return { format:'hf-catalog', version:1, shop:S.shop||'', createdAt:new Date().toISOString(),
+    estimate:{ billsPerDay:Number(S.billsPerDay)||null, itemsPerBill:Number(S.itemsPerBill)||null },
+    products:Object.values(S.picked).map(productOut),
+    customers:S.customers.map(p=>({name:p.name, phone:p.phone, route:p.area, openingBalance:Number(p.opening)||0, note:p.note})),
+    suppliers:S.suppliers.map(p=>({name:p.name, phone:p.phone, city:p.area, openingBalance:Number(p.opening)||0, note:p.note})) };
+}
+function download(name, text, type){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500);
+}
+function fileBase(){ return (S.shop||'dukaan').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'-').toLowerCase()+'-'+new Date().toISOString().slice(0,10); }
+function exportJSON(){
+  if(!Object.keys(S.picked).length && !S.customers.length && !S.suppliers.length){ toast('Abhi fehrist khali hai'); return; }
+  download(fileBase()+'.json', JSON.stringify(payload(),null,1), 'application/json'); toast('File ban gayi');
+}
+function csvCell(v){ v=v==null?'':String(v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+function exportCSV(){
+  const P=payload(), B='\ufeff';
+  const ph=['Naam','Qism']; for(let i=1;i<=4;i++) ph.push('Unit '+i,'Kitne '+i,'Thok '+i,'Parchoon '+i);
+  const pr=P.products.map(p=>{ const r=[p.name,p.category]; for(let i=0;i<4;i++){ const u=p.units[i]||{}; r.push(u.name,u.qty,u.thokRate,u.parchoonRate); } return r; });
+  download(fileBase()+'-maal.csv', B+[ph,...pr].map(r=>r.map(csvCell).join(',')).join('\n'), 'text/csv');
+  setTimeout(()=>download(fileBase()+'-grahak.csv', B+[['Naam','Phone','Ilaqa','Purana bakaya','Note'],...P.customers.map(c=>[c.name,c.phone,c.route,c.openingBalance,c.note])].map(r=>r.map(csvCell).join(',')).join('\n'),'text/csv'),400);
+  setTimeout(()=>download(fileBase()+'-supplier.csv', B+[['Naam','Phone','Shehar','Purana bakaya','Note'],...P.suppliers.map(c=>[c.name,c.phone,c.city,c.openingBalance,c.note])].map(r=>r.map(csvCell).join(',')).join('\n'),'text/csv'),800);
+  toast('3 CSV file ban gayin');
+}
+function importJSON(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{
+      const d=JSON.parse(r.result);
+      if(d.format!=='hf-catalog') throw new Error('Yeh is app ki file nahi');
+      if(!confirm('Is phone ki maujooda fehrist ki jagah file wali fehrist aa jayegi. Theek hai?')) return;
+      const N=blank(); N.shop=d.shop||''; N.billsPerDay=(d.estimate||{}).billsPerDay||''; N.itemsPerBill=(d.estimate||{}).itemsPerBill||'';
+      (d.products||[]).forEach(p=>{ const k=keyOf(p.name); if(!k) return;
+        N.picked[k]={name:p.name, cat:p.category||'Doosra', custom:!!p.custom || !ALL.some(a=>keyOf(a.name)===k),
+          units:(p.units&&p.units.length?p.units:[{name:p.unit||'pc',qty:1}]).slice(0,4).map((u,i)=>({n:u.name, q:i===0?1:u.qty, thok:u.thokRate==null?'':u.thokRate, parchoon:u.parchoonRate==null?'':u.parchoonRate}))}; });
+      N.customers=(d.customers||[]).map(c=>({name:c.name,phone:c.phone||'',area:c.route||'',opening:c.openingBalance||'',note:c.note||''}));
+      N.suppliers=(d.suppliers||[]).map(c=>({name:c.name,phone:c.phone||'',area:c.city||'',opening:c.openingBalance||'',note:c.note||''}));
+      N.cloudRev=S.cloudRev; S=N; save(); $('shopname').textContent=S.shop||'Dukaan ki Fehrist'; go('sum'); toast('Fehrist wapas aa gayi');
+    }catch(e){ toast('File nahi khuli: '+e.message); } inp.value=''; };
+  r.readAsText(f);
+}
+
+/* =========================================================================
+   CLOUD — hf_fehrist (alag table). Har tabdeeli 1.5 second baad khud jati
+   hai. Server rev se pakRta hai ke koi purani copy par na likhe; aisa ho to
+   dono copiyan mila kar dobara.
+   ========================================================================= */
+const SUPA_URL='https://jfzcevknhgexowvligjd.supabase.co';
+const SUPA_KEY='sb_publishable_beEoYRGun96-gPMeglQLXQ_jWCYc1aP';
+const LOGIN_DOMAIN='hfsolutions.app';
+let sb=null, session=null, pushing=false, pushT=null;
+
+function setSync(cls,msg){ const e=$('sync'); if(!e) return; e.className=cls; $('syncmsg').textContent=msg; }
+function stateOnly(){ const o=Object.assign({},S); delete o.cloudRev; delete o.dirty; return o; }
+function schedulePush(){ if(!session) { setSync('off','sirf phone par — login nahi'); return; } setSync('wait','bhejna baqi…'); clearTimeout(pushT); pushT=setTimeout(()=>pushNow(false),1500); }
+
+/* Do copiyan milao: dono ki cheezein, ek hi cheez dono mein ho to PHONE wali (taaza) */
+function merge(local, cloud){
+  const out=Object.assign(blank(), cloud, {cloudRev:local.cloudRev, dirty:true});
+  out.picked=Object.assign({}, cloud.picked||{}, local.picked||{});
+  ['customers','suppliers'].forEach(k=>{
+    const m=new Map(); (cloud[k]||[]).forEach(p=>m.set(keyOf(p.name),p)); (local[k]||[]).forEach(p=>m.set(keyOf(p.name),p));
+    out[k]=[...m.values()];
+  });
+  ['shop','billsPerDay','itemsPerBill'].forEach(f=>{ if(local[f]!=='' && local[f]!=null) out[f]=local[f]; });
+  return out;
+}
+async function pushNow(manual){
+  if(!session||!sb){ if(manual) toast('Pehle login karein'); return; }
+  if(pushing) return; if(!S.dirty&&!manual){ setSync('ok','cloud mein mehfooz'); return; }
+  pushing=true; setSync('wait','bhej raha hoon…');
+  try{
+    for(let attempt=0; attempt<3; attempt++){
+      const { data, error } = await sb.rpc('hf_fehrist_save', { p_shop:S.shop||'', p_data:{ state:stateOnly(), export:payload() }, p_base_rev:S.cloudRev||0 });
+      if(error) throw error;
+      const r=data&&data[0]; if(!r) throw new Error('jawab nahi aaya');
+      if(r.ok){ S.cloudRev=r.rev; S.dirty=false; store(); setSync('ok','cloud mein mehfooz'); if(manual) toast('Cloud mein mehfooz'); return; }
+      // kisi aur phone ne pehle likha — mila kar dobara
+      S=merge(S, (r.data&&r.data.state)||blank()); S.cloudRev=r.rev; store(); refresh();
+      toast('Doosre phone ki tabdeeliyan bhi mil gayin');
+    }
+    throw new Error('bar bar takraav');
+  }catch(e){ setSync('off','internet nahi — phone par mehfooz'); if(manual) toast('Cloud tak nahi pahunchi: '+(e.message||e)); }
+  finally{ pushing=false; }
+}
+async function pullCloud(){
+  const { data, error } = await sb.from('hf_fehrist').select('rev,data,shop').eq('owner_uid', UID).maybeSingle();
+  if(error) throw error;
+  const legacy=(()=>{ try{ const r=localStorage.getItem(KEY); return r?JSON.parse(r):null; }catch(e){ return null; } })();
+  const mine=load();   // isi login ki phone wali copy
+  if(!data){
+    // cloud khali: phone par jo bhi hai (login se pehle ka kaam bhi) wohi pehli copy
+    S=mine.cloudRev||Object.keys(mine.picked).length?mine:(legacy?Object.assign(blank(),legacy):blank());
+    S.cloudRev=0; S.dirty=true;
+  } else {
+    const cloudState=Object.assign(blank(), (data.data&&data.data.state)||{});
+    S = mine.dirty ? merge(mine, cloudState) : Object.assign(cloudState,{cloudRev:data.rev,dirty:false});
+    S.cloudRev=data.rev;
+  }
+  if(legacy) localStorage.removeItem(KEY);
+  store(); refresh();
+  if(S.dirty) pushNow(false); else setSync('ok','cloud mein mehfooz');
+}
+function refresh(){ $('shopname').textContent=S.shop||'Dukaan ki Fehrist'; counts(); ({items:drawItems,cust:()=>drawParties('customers'),sup:()=>drawParties('suppliers'),sum:drawSum}[screen]||drawItems)(); }
+function showApp(on){ $('s-login').classList.toggle('on',!on); document.querySelector('.nav').style.display=on?'':'none'; if(on) go(screen==='login'?'items':screen); else document.querySelectorAll('.scr').forEach(x=>x.classList.toggle('on',x.id==='s-login')); }
+async function afterLogin(){
+  UID=session.user.id; $('who') && ($('who').textContent=session.user.email.split('@')[0]);
+  showApp(true); setSync('wait','cloud se mila raha hoon…');
+  try{ await pullCloud(); }catch(e){ S=load(); refresh(); setSync('off','cloud tak nahi pahunchi — phone par kaam jaari'); }
+}
+async function doLogin(){
+  const v=String($('lg-u').value||'').trim().toLowerCase(), pass=String($('lg-p').value||'');
+  if(!v||!pass){ $('lg-msg').textContent='Username aur password likhein'; return; }
+  const email=v.includes('@')?v:v.replace(/\s+/g,'')+'@'+LOGIN_DOMAIN;
+  $('lg-go').disabled=true; $('lg-msg').textContent='Andar ja rahe hain…';
+  try{ const { data, error } = await sb.auth.signInWithPassword({ email, password:pass }); if(error) throw error;
+       session=data.session; $('lg-msg').textContent=''; await afterLogin(); }
+  catch(e){ $('lg-msg').textContent=(e.message||'').includes('Invalid')?'Username ya password theek nahi':(e.message||'Andar nahi ja sake'); }
+  finally{ $('lg-go').disabled=false; }
+}
+async function doLogout(){
+  if(S.dirty){ await pushNow(true); if(S.dirty && !confirm('Kuch tabdeeliyan abhi cloud tak nahi pahunchin. Phir bhi logout? (phone par mehfooz rahengi)')) return; }
+  try{ await sb.auth.signOut(); }catch(e){}
+  session=null; UID=null; S=blank(); showApp(false);
+}
+
+window.addEventListener('online', ()=>{ if(session&&S.dirty) pushNow(false); });
+setInterval(()=>{ if(session&&S.dirty&&!pushing) pushNow(false); }, 30000);
+
+(async function start(){
+  $('shopname').textContent=S.shop||'Dukaan ki Fehrist'; counts();
+  if(typeof supabase==='undefined'){            // internet ke baghair pehli dafa khuli
+    showApp(true); setSync('off','internet nahi — phone par kaam jaari'); return;
+  }
+  sb=supabase.createClient(SUPA_URL, SUPA_KEY, { auth:{ persistSession:true, autoRefreshToken:true, storageKey:'hf-fehrist-auth' } });
+  try{ const { data } = await sb.auth.getSession(); if(data&&data.session){ session=data.session; await afterLogin(); return; } }catch(e){}
+  showApp(false);
+})();
+</script>
+</body>
+</html>
