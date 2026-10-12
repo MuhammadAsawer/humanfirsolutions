@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0F2A20">
+<title>Property Society · HF Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&family=Noto+Nastaliq+Urdu:wght@400;600&display=swap">
+<style>
+/* Layout: surveyed-estate letterhead band (identity left, cash right) → underline tab rail → single ledger column; bottom sheets for forms; statements styled as printed accounts */
+:root{
+  --bg:#F3F4F1; --surface:#FFFFFF; --ink:#13201A; --muted:#5B6A62; --line:#DCE2DD;
+  --band:#0F2A20; --band-ink:#EEF3EF; --band-muted:#A9BDB2; --brass:#B08A4E; --brass-soft:#F5EDDF;
+  --accent:#1E5A43; --accent-soft:#E3EEE8; --due:#97650A; --due-soft:#FAF0DB; --late:#A8322A; --late-soft:#F8E4E1; --ok:#2A7A4E; --wa:#1B7F4B;
+  --display:"Marcellus","Trajan Pro",Georgia,serif;
+  --body:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --urdu:"Noto Nastaliq Urdu","Jameel Noori Nastaleeq","Urdu Typesetting",serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0E1512; --surface:#16201B; --ink:#E6EEE9; --muted:#97A79E; --line:#2A3831;
+  --band:#0A1C15; --band-ink:#EEF3EF; --band-muted:#8FA79A; --brass:#D2B07A; --brass-soft:#2E2618;
+  --accent:#7CC7A2; --accent-soft:#1C3127; --due:#E7B45A; --due-soft:#33291A; --late:#F08A80; --late-soft:#3A1F1C; --ok:#7CC7A2; --wa:#6FD39C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1512; --surface:#16201B; --ink:#E6EEE9; --muted:#97A79E; --line:#2A3831;
+  --band:#0A1C15; --band-ink:#EEF3EF; --band-muted:#8FA79A; --brass:#D2B07A; --brass-soft:#2E2618;
+  --accent:#7CC7A2; --accent-soft:#1C3127; --due:#E7B45A; --due-soft:#33291A; --late:#F08A80; --late-soft:#3A1F1C; --ok:#7CC7A2; --wa:#6FD39C; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+.ur{font-family:var(--urdu);direction:rtl;unicode-bidi:isolate;font-weight:400;letter-spacing:0;text-transform:none;line-height:1.9}
+.sm{font-size:.82em}
+
+/* ---- letterhead band ---- */
+.band{background-color:var(--band);color:var(--band-ink);
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);
+  background-size:22px 22px,22px 22px,110px 110px,110px 110px;border-bottom:2px solid var(--brass);padding-inline:16px}
+.band-in{max-width:880px;margin:0 auto;padding-block:22px 20px;display:flex;gap:20px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.ident{display:flex;gap:16px;align-items:center;min-width:0;flex:1 1 320px}
+.seal{width:64px;height:64px;border-radius:50%;border:1.5px solid var(--brass);display:grid;place-items:center;flex-shrink:0;font-family:var(--display);font-size:1.45rem;color:var(--brass);letter-spacing:.06em;position:relative;background:rgba(0,0,0,.18)}
+.seal::after{content:"";position:absolute;inset:4px;border-radius:50%;border:1px solid color-mix(in srgb,var(--brass) 45%,transparent)}
+.names{min-width:0;display:flex;flex-direction:column;gap:2px}
+.soc{font-family:var(--display);font-size:clamp(1.45rem,4.4vw,2.05rem);line-height:1.12;letter-spacing:.015em;text-wrap:balance;overflow-wrap:anywhere}
+.soc-ur{color:var(--brass);font-size:1.05rem;line-height:2}
+.branch{font-size:.8rem;letter-spacing:.14em;text-transform:uppercase;color:var(--band-muted);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.branch .ur{letter-spacing:0;font-size:1rem;color:var(--band-ink)}
+.addr{font-size:.8rem;color:var(--band-muted);overflow-wrap:anywhere}
+.linkbtn{all:unset;cursor:pointer;color:var(--brass);font-size:.82rem;font-weight:600;margin-top:4px;text-decoration:underline;text-underline-offset:3px}
+.cashbox{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px;position:relative;padding-right:44px;min-width:0}
+.cashbox .k{font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--band-muted);display:flex;gap:8px;align-items:baseline}
+.cashbox .k .ur{font-size:.95rem;letter-spacing:0;color:var(--band-ink)}
+.cashnum{font-family:var(--mono);font-size:clamp(1.5rem,5vw,2.1rem);color:var(--band-ink);font-variant-numeric:tabular-nums;line-height:1.15}
+.cashnum.neg{color:#FF9C92}
+.asof{font-size:.74rem;color:var(--band-muted)}
+.gear{position:absolute;right:0;top:0;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:transparent;color:var(--band-ink);cursor:pointer;display:grid;place-items:center}
+.gear svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.6}
+@media (max-width:520px){.cashbox{align-items:flex-start;text-align:left;padding-right:0;width:100%;border-top:1px solid rgba(255,255,255,.12);padding-top:12px}.gear{top:10px}}
+
+/* ---- tabs ---- */
+.tabs-wrap{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--surface);border-bottom:1px solid var(--line);padding-inline:16px}
+.tabs{max-width:880px;margin:0 auto;display:flex;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{flex:1 0 auto;border:0;background:transparent;color:var(--muted);cursor:pointer;padding:8px 14px 6px;display:flex;flex-direction:column;align-items:center;gap:0;border-bottom:2px solid transparent;font:600 .84rem var(--body);white-space:nowrap}
+.tabs button .ur{font-size:.78rem;line-height:1.7;font-weight:400}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--brass)}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+
+.wrap{max-width:880px;margin:0 auto;padding-inline:16px;padding-block:18px 96px}
+section{display:flex;flex-direction:column;gap:16px}
+h2.bh{font-family:var(--display);font-weight:400;font-size:1.3rem;margin:0;display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;letter-spacing:.01em}
+h2.bh .ur{font-size:.95rem;color:var(--muted)}
+.lrow{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.lrow .ur{font-size:.9em;color:var(--muted);line-height:1.7}
+.lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);font-weight:600}
+.lbl .ur{font-size:1.15em;text-transform:none;letter-spacing:0;font-weight:400}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+@media (min-width:700px){.stats.three{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.stat{background:var(--surface);padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.stat .num{font-size:1.18rem;overflow-wrap:anywhere}
+.stat.wide{grid-column:1/-1}
+.stat small{color:var(--muted);font-size:.78rem}
+.plus{color:var(--ok)}.minus{color:var(--late)}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line)}
+.list>.row:first-child,.list>.rowbtn:first-child .row{border-top:0}
+.row .main{flex:1;min-width:0}
+.row .t{font-weight:600;overflow-wrap:anywhere}
+.row .m{color:var(--muted);font-size:.82rem;overflow-wrap:anywhere}
+.row .amt{text-align:right;white-space:nowrap;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+button.rowbtn{all:unset;display:flex;width:100%;cursor:pointer}
+button.rowbtn:hover .row{background:var(--bg)}
+button.rowbtn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:.7rem;font-weight:600;padding:1px 9px;border-radius:99px;white-space:nowrap;line-height:1.7}
+.pill .ur{font-size:.95em;line-height:1.5}
+.p-late{background:var(--late-soft);color:var(--late)}
+.p-due{background:var(--due-soft);color:var(--due)}
+.p-ok{background:var(--accent-soft);color:var(--ok)}
+.p-up{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.p-brass{background:var(--brass-soft);color:var(--brass)}
+.btn{border:0;border-radius:10px;padding:9px 16px;font:600 .88rem var(--body);cursor:pointer;background:var(--accent);color:var(--surface);display:inline-flex;align-items:center;gap:8px}
+.btn .ur{font-size:.9em;line-height:1.6;font-weight:400}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--late);border:1px solid var(--line)}
+.btn.small{padding:5px 11px;font-size:.8rem}
+.btn:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.wa{background:transparent;font-family:var(--body);cursor:pointer}
+.demobar{background:var(--brass-soft);border:1px solid var(--brass);color:var(--ink);border-radius:12px;padding:10px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-size:.86rem;margin-bottom:16px}
+.demobar .ur{color:var(--muted)}
+.demobtn{border:1px solid var(--brass);background:transparent;color:var(--brass);border-radius:99px;padding:3px 12px;font:600 .76rem var(--body);cursor:pointer;margin-top:6px;display:inline-flex;gap:6px;align-items:baseline}
+.demobtn .ur{font-size:.95em;font-weight:400;line-height:1.6}
+.guide{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.gcard{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px}
+.gcard .gn{font-family:var(--mono);font-size:.72rem;color:var(--brass)}
+.gcard .gt{font-weight:600}
+.gcard .gt .ur{display:block;font-weight:400;color:var(--muted);font-size:.92rem}
+.gcard p{margin:0;font-size:.82rem;color:var(--muted)}
+.gcard .btn{align-self:flex-start;margin-top:auto}
+a.wa{display:inline-flex;align-items:center;gap:6px;color:var(--wa);font-weight:600;font-size:.8rem;text-decoration:none;border:1px solid var(--line);border-radius:99px;padding:3px 10px;white-space:nowrap}
+a.wa svg{width:14px;height:14px;fill:currentColor}
+button.wa{display:inline-flex;align-items:center;gap:6px;color:var(--wa);font-weight:600;font-size:.8rem;border:1px solid var(--line);border-radius:99px;padding:3px 10px;white-space:nowrap}
+.contact{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.contact .phone{font-family:var(--mono);font-size:.85rem;color:var(--muted);user-select:all}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:24px 18px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-family:var(--display);font-weight:400;font-size:1.1rem;margin-bottom:2px}
+.empty .ur{display:block;font-size:.95rem}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 12px}
+input[type=checkbox]{width:auto}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:.84rem;font-weight:500;min-width:0}
+label.chk{display:flex;gap:8px;align-items:center;font-size:.84rem;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:460px){.grid2{grid-template-columns:1fr}.grid3{grid-template-columns:1fr 1fr}}
+.full{grid-column:1/-1}
+.preview{background:var(--accent-soft);border-radius:10px;padding:10px 12px;font-size:.88rem}
+.box{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.srow{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) auto;gap:6px;align-items:center}
+.srow input{padding:7px}
+.sheet-bg{position:fixed;inset:0;background:rgba(6,16,12,.5);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:660px;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px;border-top:3px solid var(--brass)}
+.sheet header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.sheet header h2{font-family:var(--display);font-weight:400;font-size:1.35rem;margin:2px 0 0}
+.x{border:0;background:var(--bg);color:var(--ink);width:34px;height:34px;border-radius:50%;font-size:1.1rem;cursor:pointer;flex-shrink:0}
+.sched .row{padding:10px 12px;flex-wrap:wrap}
+.sched .no{font-family:var(--mono);color:var(--muted);width:2.2em;flex-shrink:0}
+.payform{display:flex;flex-direction:column;gap:8px;padding:10px 12px;background:var(--bg);border-top:1px solid var(--line)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:.86rem;z-index:30;max-width:92%}
+.note{font-size:.8rem;color:var(--muted)}
+.banner{background:var(--due-soft);color:var(--due);border-radius:12px;padding:10px 14px;font-size:.85rem}
+.warn{color:var(--late);font-size:.82rem}
+
+/* ---- statements ---- */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:99px;padding:4px 12px;font:500 .8rem var(--body);cursor:pointer;display:inline-flex;gap:6px;align-items:baseline}
+.seg button .ur{font-size:.92em;color:var(--muted);line-height:1.6}
+.seg button[aria-pressed="true"]{background:var(--band);color:var(--band-ink);border-color:var(--band)}
+.seg button[aria-pressed="true"] .ur{color:var(--brass)}
+.controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;align-items:end}
+.stmt{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.stmt-h{padding:18px 18px 14px;border-bottom:1px solid var(--line);text-align:center;display:flex;flex-direction:column;gap:2px;background:linear-gradient(var(--brass-soft),var(--surface))}
+.stmt-soc{font-family:var(--display);font-size:1.15rem;letter-spacing:.02em}
+.stmt-t{font-size:.78rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--brass);display:flex;gap:10px;justify-content:center;align-items:baseline;flex-wrap:wrap}
+.stmt-t .ur{letter-spacing:0;font-size:1.05rem;text-transform:none;font-weight:400}
+.stmt-p{font-size:.8rem;color:var(--muted)}
+.tblwrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:.86rem}
+.tbl.wide{min-width:560px}
+@media (max-width:460px){.tbl td,.tbl th{padding-inline:10px}}
+.tbl th{font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:bottom}
+.tbl th .ur{display:block;text-transform:none;letter-spacing:0;font-size:1.15em;font-weight:400;line-height:1.7}
+.tbl td{padding:8px 14px;border-top:1px solid var(--line);vertical-align:top}
+.tbl .n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl td .ur{display:block;font-size:.85em;color:var(--muted);line-height:1.7}
+.tbl tr.sec td{background:var(--bg);font-weight:600;font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.tbl tr.sec td .ur{display:inline;margin-left:8px;text-transform:none;letter-spacing:0;font-size:1.1em}
+.tbl tr.sub td{font-weight:600;border-top:1px solid var(--ink)}
+.tbl tr.grand td{font-weight:600;border-top:1px solid var(--ink);border-bottom:3px double var(--ink)}
+.tbl tr.narr td{border-top:1px solid var(--line);font-weight:600;background:var(--bg)}
+.tbl tr.ln td{border-top:0;padding-block:3px}
+.tbl tr.ln td.ind{padding-left:34px}
+.tbl tfoot td{font-weight:600;border-top:1px solid var(--ink);border-bottom:3px double var(--ink)}
+.check{padding:10px 16px;font-size:.82rem;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+</head><body>
+<header class="band" id="band"></header>
+<div class="tabs-wrap"><nav class="tabs" role="tablist" id="tabs"></nav></div>
+<div class="wrap"><div id="demobar" class="demobar" hidden></div><div id="banner" class="banner" hidden></div><main id="view"></main></div>
+<div id="sheetRoot"></div>
+<div id="toast" class="toast" hidden></div>
+<script>
+/* ===== HF Solutions bridge: login, Core guard, Supabase storage ===== */
+(function(){
+window.HF_APP='society';
+window.APP_VER='SOC-2026-10-12-a';
+const SB_URL='https://jfzcevknhgexowvligjd.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpmemNldmtuaGdleG93dmxpZ2pkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwOTE3NzYsImV4cCI6MjEwMDY2Nzc3Nn0.WOaVPXHSHrCiTM9Ro0ezq7e-vtjdYGDAn4HWPI495vg';
+const CORE='society';
+const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{storageKey:'hf-society-auth',persistSession:true,autoRefreshToken:true}});
+const clone=o=>JSON.parse(JSON.stringify(o));
+let resolveDb,ready=false;const dbReady=new Promise(r=>resolveDb=r);
+
+/* ---- storage adapter: same calls the ledger uses (collection/doc/set/delete/onSnapshot) ---- */
+function hfDb(uid,cid){
+  let cache={},loaded=false,inflight=0,wv=0;const subs=new Set();
+  const fire=()=>subs.forEach(f=>{try{f()}catch(e){console.error(e)}});
+  async function pull(force){
+    const start=wv;const all=[];
+    for(let from=0;;from+=1000){
+      const {data,error}=await sb.from('hf_society').select('coll,doc_id,data').eq('owner_uid',uid).is('deleted_at',null)
+        .order('coll',{ascending:true}).order('doc_id',{ascending:true}).range(from,from+999);
+      if(error)throw error;all.push(...data);if(data.length<1000)break;
+    }
+    if(!force&&(inflight>0||wv!==start))return;           // a write happened meanwhile — keep local copy
+    const c={};all.forEach(r=>{(c[r.coll]=c[r.coll]||{})[r.doc_id]=r.data});cache=c;loaded=true;fire();
+  }
+  const err=e=>{const code=e&&(e.code==='42501'||e.status===401||e.status===403)?'invalid_argument':'unavailable';return {code,message:(e&&e.message)||'error'}};
+  async function write(c,id,body,del){
+    wv++;inflight++;
+    if(del){if(cache[c])delete cache[c][id]}else{(cache[c]=cache[c]||{})[id]=clone(body)}
+    fire();
+    try{
+      const q=del?sb.from('hf_society').update({deleted_at:new Date().toISOString()}).eq('owner_uid',uid).eq('coll',c).eq('doc_id',id)
+                 :sb.from('hf_society').upsert({owner_uid:uid,client_id:cid,coll:c,doc_id:id,data:clone(body),deleted_at:null},{onConflict:'owner_uid,coll,doc_id'});
+      const {error}=await q;if(error)throw error;
+    }catch(e){inflight--;try{await pull(true)}catch(_){}throw err(e)}
+    inflight--;
+  }
+  const newId=()=>'d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  const ref=(c,id)=>({id,path:c+'/'+id,
+    set:b=>write(c,id,b,false),delete:()=>write(c,id,null,true),
+    onSnapshot:(f)=>{const run=()=>{if(loaded){const d=cache[c]&&cache[c][id];f({id,exists:!!d,data:()=>d?clone(d):undefined})}};subs.add(run);run();return()=>subs.delete(run)}});
+  const api={
+    collection:c=>({doc:id=>ref(c,id||newId()),
+      onSnapshot:(f)=>{const run=()=>{if(loaded)f({docs:Object.entries(cache[c]||{}).map(([id,d])=>({id,exists:true,data:()=>clone(d)}))})};subs.add(run);run();return()=>subs.delete(run)}}),
+    doc:p=>{const [c,id]=p.split('/');return ref(c,id)},
+    pull,has:(c,id)=>!!(cache[c]&&cache[c][id])};
+  setInterval(()=>{if(document.visibilityState==='visible')pull().catch(()=>{})},30000);
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pull().catch(()=>{})});
+  return api;
+}
+
+/* ---- runtime the ledger asks for ---- */
+window.claude={use:async n=>{
+  if(n==='db')return dbReady;
+  if(n==='user')return {can:async()=>true,isOwner:()=>true,canEdit:()=>true};
+  if(n==='downloads')return {save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data],{type:filename.endsWith('.json')?'application/json':'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500);return {status:'saved'}}};
+  return null}};
+
+/* ---- login screen ---- */
+const css=document.createElement('style');css.textContent=`
+.hflogin{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background-color:var(--band);
+ background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);background-size:22px 22px}
+.hfcard{background:var(--surface);color:var(--ink);border-radius:18px;padding:26px 22px;width:100%;max-width:380px;border-top:3px solid var(--brass);display:flex;flex-direction:column;gap:14px}
+.hfcard .seal{width:58px;height:58px;font-size:1.2rem;align-self:center;background:transparent}
+.hft{font-family:var(--display);font-size:1.5rem;text-align:center;line-height:1.2}
+.hft .ur{display:block;font-size:1.05rem;color:var(--brass)}
+.hfs{text-align:center;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+#hfForm{display:flex;flex-direction:column;gap:12px}#hfForm .btn{justify-content:center}
+#hfMsg{min-height:1.2em}`;
+document.head.appendChild(css);
+const box=document.createElement('div');box.className='hflogin';box.id='hfLogin';box.hidden=true;
+box.innerHTML=`<div class="hfcard" role="dialog" aria-label="Sign in">
+  <div class="seal" aria-hidden="true">HF</div>
+  <div class="hft">Property Society<span class="ur" lang="ur" dir="rtl">پراپرٹی سوسائٹی</span></div>
+  <div class="hfs">HF Solutions</div>
+  <form id="hfForm" autocomplete="on">
+    <label class="f"><span class="lrow"><span>Login</span><span class="ur" lang="ur" dir="rtl">لاگ ان</span></span><input id="hf_login" autocomplete="username" autocapitalize="none" required></label>
+    <label class="f"><span class="lrow"><span>Password</span><span class="ur" lang="ur" dir="rtl">پاس ورڈ</span></span><input id="hf_pass" type="password" autocomplete="current-password" required></label>
+    <button class="btn" type="submit" id="hf_btn"><span>Sign in</span><span class="ur" lang="ur" dir="rtl">سائن ان</span></button>
+    <div id="hfMsg" class="warn" role="alert"></div>
+  </form>
+  <div class="note" style="text-align:center">App version ${window.APP_VER}</div></div>`;
+const mount=()=>document.body.appendChild(box);
+if(document.body)mount();else document.addEventListener('DOMContentLoaded',mount);
+const $=id=>document.getElementById(id);
+const say=(en,ur)=>{$('hfMsg').innerHTML=en+(ur?` <span class="ur" lang="ur" dir="rtl" style="display:block">${ur}</span>`:'')};
+const busy=b=>{const btn=$('hf_btn');if(btn)btn.disabled=b};
+
+async function afterLogin(session){
+  const uid=session.user.id,login=(session.user.email||'').split('@')[0],cid='c_'+uid.slice(0,8);
+  window.HF_LOGIN=login;
+  const {data:rows,error:e1}=await sb.from('hf_clients').select('id, core:data->>coreId').eq('owner_uid',uid);
+  if(e1)throw e1;
+  const other=(rows||[]).find(r=>r.core&&r.core!==CORE);
+  if(other){await sb.auth.signOut();return say(`This login belongs to another HF app (${other.core}). Open that app instead — nothing was changed.`,'یہ لاگ ان کسی دوسری ایپ کا ہے۔ کچھ تبدیل نہیں ہوا۔')}
+  let packet=null;
+  if(!(rows||[]).some(r=>r.core===CORE)){
+    const {data:ps,error:e2}=await sb.from('hf_setup').select('id,login,core_id,name,data,claimed_by').eq('login',login).order('id',{ascending:false});
+    if(e2)throw e2;
+    const p=(ps||[]).find(x=>x.core_id===CORE&&(!x.claimed_by||x.claimed_by===uid));
+    if(!p){await sb.auth.signOut();const wrong=(ps||[]).find(x=>x.core_id!==CORE);
+      return say(wrong?`This login was set up for another HF app (${wrong.core_id}).`:'No Property Society account has been set up for this login yet. Ask HF Solutions.',wrong?'یہ لاگ ان کسی دوسری ایپ کے لیے بنا ہے۔':'اس لاگ ان کے لیے ابھی اکاؤنٹ نہیں بنا۔')}
+    if(!p.claimed_by){const {data:cl,error:e3}=await sb.from('hf_setup').update({claimed_by:uid,claimed_at:new Date().toISOString()}).eq('id',p.id).is('claimed_by',null).select('id');
+      if(e3||!cl||!cl.length){await sb.auth.signOut();return say('Could not activate this account. Try again.','اکاؤنٹ فعال نہیں ہو سکا۔')}}
+    const {data:wb,error:e4}=await sb.rpc('hf_write_blob',{p_id:cid,p_data:{coreId:CORE,name:p.name||'',coreVersion:1,createdAt:new Date().toISOString()},p_rev:0});
+    if(e4||!wb||!wb[0]||!wb[0].ok){await sb.auth.signOut();return say('Could not create the client record. Nothing else was changed.','کلائنٹ ریکارڈ نہیں بن سکا۔')}
+    packet=p;
+  }
+  const db=hfDb(uid,cid);await db.pull(true);
+  if(packet&&!db.has('settings','profile')){const st=(packet.data&&packet.data.settings)||{soc:packet.name||''};await db.doc('settings/profile').set(st)}
+  box.hidden=true;ready=true;resolveDb(db);
+}
+async function start(){
+  try{const {data}=await sb.auth.getSession();if(data&&data.session)await afterLogin(data.session)}catch(e){console.error(e);say('Could not reach the server. Check the internet and sign in again.','سرور سے رابطہ نہیں ہو سکا۔')}
+  if(!ready)box.hidden=false;
+}
+document.addEventListener('submit',async e=>{
+  if(e.target.id!=='hfForm')return;e.preventDefault();e.stopImmediatePropagation();
+  let login=$('hf_login').value.trim().toLowerCase();const pass=$('hf_pass').value;
+  const email=login.includes('@')?login:login+'@hfsolutions.app';
+  busy(true);say('Signing in…','');
+  try{
+    const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+    if(error){const m=/rate|too many/i.test(error.message||'')||error.status===429;
+      say(m?'Too many attempts from this connection. Wait a few minutes, then try once.':'Wrong login or password.',m?'بہت زیادہ کوششیں — چند منٹ انتظار کریں۔':'لاگ ان یا پاس ورڈ غلط ہے۔');return}
+    await afterLogin(data.session);
+  }catch(err){console.error(err);say('Could not reach the server. Check the internet and try again.','سرور سے رابطہ نہیں ہو سکا۔')}
+  finally{busy(false)}
+},true);
+window.HF_LOGOUT=async()=>{try{await sb.auth.signOut()}catch(_){}location.reload()};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+})();
+
+</script>
+<script>
+/* ===== Accounting engine (pure, no DOM) ===== */
+window.IKE=(function(){
+const num=x=>Math.round(Number(x)||0);
+function addMonths(s,k){const [y,m,d]=s.split('-').map(Number);const t=new Date(y,m-1+k,1);const last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();t.setDate(Math.min(d,last));return t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0')}
+const ym=s=>(s||'').slice(0,7);
+function statusOf(due,amt,p,today){if(p)return num(p.amount)<amt?'short':'paid';if(!due)return 'up';if(due<today)return 'late';if(ym(due)===ym(today))return 'due';return 'up'}
+function schedule(inv,today){
+  const amount=num(inv.amount),pct=Number(inv.pct)||0,months=Math.max(1,Number(inv.months)||12);
+  const total=Math.round(amount*(1+pct/100));const n=inv.plan==='end'?1:months;const per=Math.floor(total/n);const rows=[];
+  for(let i=1;i<=n;i++){const due=addMonths(inv.start,inv.plan==='end'?months:i);const amt=i===n?total-per*(n-1):per;const p=inv.paid&&inv.paid[i]||null;rows.push({i,due,amt,p,st:statusOf(due,amt,p,today)})}
+  const paidSum=rows.reduce((a,r)=>a+(r.p?num(r.p.amount):0),0);
+  return {total,profit:total-amount,rows,paidSum,left:total-paidSum};
+}
+function rowsOf(list,today){return (list||[]).map((r,i)=>({i,label:r.label,due:r.due,amt:num(r.amount),p:r.paid||null,st:statusOf(r.due,num(r.amount),r.paid,today)}))}
+function summ(rows,total){const paidSum=rows.reduce((a,r)=>a+(r.p?num(r.p.amount):0),0);return {rows,paidSum,total,left:total-paidSum,schedSum:rows.reduce((a,r)=>a+r.amt,0)}}
+const purSched=(pu,today)=>summ(rowsOf(pu.schedule,today),num(pu.total));
+const saleSched=(pu,today)=>(pu.dispo==='sold'&&pu.sale)?summ(rowsOf(pu.sale.schedule,today),num(pu.sale.total)):null;
+function makeACC(s){return {
+  '1000':['Cash in Hand','نقد رقم','A'],
+  '1500':['Land We Own (at cost)','ہماری زمین (لاگت پر)','A'],
+  '1600':['Head Office Owes Us','ہیڈ آفس سے لینا ہے','A'],
+  '1610':['Buyers Owe Us','خریداروں سے لینا ہے','A'],
+  '2100':['We Owe Land Sellers','زمین فروشوں کو دینا ہے','L'],
+  '2200':['We Owe Agents','ایجنٹوں کو دینا ہے','L'],
+  '2400':['Investors’ Money','سرمایہ کاروں کی رقم','L'],
+  '2410':['Profit Owed to Investors','سرمایہ کاروں کو منافع دینا ہے','L'],
+  '2500':['Head Office Advances','ہیڈ آفس کی پیشگی رقم','L'],
+  '3100':['Money Put In — '+s.p1en,'سرمایہ — '+s.p1ur,'E'],
+  '3110':['Money Put In — '+s.p2en,'سرمایہ — '+s.p2ur,'E'],
+  '3200':['Taken Out — '+s.p1en,'نکاسی — '+s.p1ur,'E'],
+  '3210':['Taken Out — '+s.p2en,'نکاسی — '+s.p2ur,'E'],
+  '3900':['Old Records (before this app)','پرانا حساب (ایپ سے پہلے)','E'],
+  '4100':['Land Sold','زمین کی فروخت','I'],
+  '4200':['Land Given to Head Office','ہیڈ آفس کو دی گئی زمین','I'],
+  '5100':['Cost of Land Sold or Given','فروخت/حوالہ شدہ زمین کی لاگت','X'],
+  '5200':['Commission Paid to Agents','ایجنٹوں کا کمیشن','X'],
+  '5300':['Profit to Investors','سرمایہ کاروں کا منافع','X'],
+  '5400':['Office Expenses','دفتری اخراجات','X'],
+  '5900':['Other Expenses','دیگر اخراجات','X']}}
+function partnerOf(who,s){if(who==='A'||who===s.p1en||who==='Malik Ashraf Aheer')return 'A';if(who==='Z'||who===s.p2en||who==='Captain Azad')return 'Z';return 'both'}
+function buildJournal(D,s,today){
+  const J=[];let seq=0;
+  const add=(date,narr,lines,src)=>{lines=lines.filter(l=>(l.dr||0)>0||(l.cr||0)>0);if(!lines.length||!date)return;J.push({date,narr,lines,src,o:seq++})};
+  (D.investors||[]).forEach(inv=>{const sc=schedule(inv,today);const P=num(inv.amount),T=sc.total,pt=inv.name||'Investor',src={t:'inv',id:inv.id};
+    add(inv.start,(inv.cashIn===true?'Investment received — ':'Old investment (before this app) — ')+pt,[{a:inv.cashIn===true?'1000':'3900',dr:P},{a:'2400',cr:P,p:pt}],src);
+    sc.rows.forEach(r=>{const pr=T>0?Math.round(r.amt*(T-P)/T):0;
+      const accDate=r.p&&r.p.date&&r.p.date<r.due?r.p.date:r.due;
+      if(pr>0&&accDate<=today)add(accDate,'Profit due to investor — '+pt+', inst. '+r.i,[{a:'5300',dr:pr},{a:'2410',cr:pr,p:pt}],src);
+      if(r.p){const pa=num(r.p.amount);const pp=r.amt?Math.min(pa,Math.round(pa*pr/r.amt)):0;const crA=(r.p.mode==='Purana record'||r.p.mode==='Opening record')?'3900':'1000';
+        add(r.p.date,'Return paid — '+pt+', inst. '+r.i+(r.p.ref?' (ref '+r.p.ref+')':''),[{a:'2410',dr:pp,p:pt},{a:'2400',dr:pa-pp,p:pt},{a:crA,cr:pa}],src)}});
+  });
+  (D.purchases||[]).forEach(pu=>{const T=num(pu.total),sl=pu.seller||'Seller',rf=pu.ref||'land',src={t:'pur',id:pu.id};
+    add(pu.date,'Land purchased — '+rf+' from '+sl,[{a:'1500',dr:T},{a:'2100',cr:T,p:sl}],src);
+    (pu.schedule||[]).forEach(r=>{if(r.paid){const pa=num(r.paid.amount);add(r.paid.date,'Paid to land seller — '+sl+', '+(r.label||'')+(r.paid.ref?' (ref '+r.paid.ref+')':''),[{a:'2100',dr:pa,p:sl},{a:'1000',cr:pa}],src)}});
+    if(pu.dispo==='ho'&&pu.ho){const v=num(pu.ho.value);
+      add(pu.ho.date,'Land handed to Head Office — '+rf,[{a:'1600',dr:v,p:'Head Office'},{a:'4200',cr:v}],src);
+      add(pu.ho.date,'Cost of land handed over — '+rf,[{a:'5100',dr:T},{a:'1500',cr:T}],src)}
+    if(pu.dispo==='sold'&&pu.sale){const v=num(pu.sale.total),b=pu.sale.buyer||'Buyer';
+      add(pu.sale.date,'Land sold — '+rf+' to '+b,[{a:'1610',dr:v,p:b},{a:'4100',cr:v}],src);
+      add(pu.sale.date,'Cost of land sold — '+rf,[{a:'5100',dr:T},{a:'1500',cr:T}],src);
+      (pu.sale.schedule||[]).forEach(r=>{if(r.paid){const pa=num(r.paid.amount);add(r.paid.date,'Received from buyer — '+b+', '+(r.label||'')+(r.paid.ref?' (ref '+r.paid.ref+')':''),[{a:'1000',dr:pa},{a:'1610',cr:pa,p:b}],src)}})}
+  });
+  (D.receipts||[]).forEach(r=>{const a=num(r.amount),src={t:'rec',id:r.id};const lp=r.purpose==='land'?(D.purchases||[]).find(p=>p.id===r.purId):null;
+    let cr,narr;
+    if(r.purpose==='land'){cr={a:'1600',cr:a,p:'Head Office'};narr='Received from Head Office for land '+(lp?(lp.ref||''):'')}
+    else if(r.purpose==='capA'){cr={a:'3100',cr:a};narr='Capital introduced — '+s.p1en}
+    else if(r.purpose==='capZ'){cr={a:'3110',cr:a};narr='Capital introduced — '+s.p2en}
+    else{cr={a:'2500',cr:a,p:'Head Office'};narr='Received from Head Office (advance / funding)'}
+    add(r.date,narr+(r.ref?' (ref '+r.ref+')':''),[{a:'1000',dr:a},cr],src)});
+  (D.deals||[]).forEach(d=>{const c=num(d.commission),ag=d.agent||'Agent',src={t:'deal',id:d.id};
+    add(d.date,'Commission due — '+ag+(d.ref?', '+d.ref:''),[{a:'5200',dr:c},{a:'2200',cr:c,p:ag}],src);
+    (d.payments||[]).forEach(x=>{const pa=num(x.amount);add(x.date,'Commission paid — '+ag+(x.ref?' (ref '+x.ref+')':''),[{a:'2200',dr:pa,p:ag},{a:'1000',cr:pa}],src)})});
+  (D.outs||[]).forEach(o=>{const a=num(o.amount),src={t:'out',id:o.id};let dr,narr;
+    if(o.kind==='owner'){const w=partnerOf(o.who,s);
+      if(w==='A'){dr=[{a:'3200',dr:a}];narr='Taken out — '+s.p1en}
+      else if(w==='Z'){dr=[{a:'3210',dr:a}];narr='Taken out — '+s.p2en}
+      else{const tot=(Number(s.p1)||0)+(Number(s.p2)||0)||100;const h=Math.round(a*(Number(s.p1)||50)/tot);dr=[{a:'3200',dr:h},{a:'3210',dr:a-h}];narr='Taken out — both partners'}}
+    else{dr=[{a:o.kind==='office'?'5400':'5900',dr:a}];narr=o.kind==='office'?'Office expense':'Other expense'}
+    add(o.date,narr+(o.note?' — '+o.note:''),[...dr,{a:'1000',cr:a}],src)});
+  J.sort((x,y)=>x.date.localeCompare(y.date)||x.o-y.o);J.forEach((e,i)=>e.no='JV-'+String(i+1).padStart(4,'0'));
+  return J;
+}
+function balances(J,to,from){const m={};J.forEach(e=>{if(to&&e.date>to)return;if(from&&e.date<from)return;e.lines.forEach(l=>{const x=m[l.a]||(m[l.a]={dr:0,cr:0});x.dr+=l.dr||0;x.cr+=l.cr||0})});return m}
+return {num,addMonths,ym,statusOf,schedule,rowsOf,purSched,saleSched,makeACC,partnerOf,buildJournal,balances};
+})();
+</script>
+<script>
+(function(){
+const {num,addMonths,ym,schedule,purSched,saleSched,makeACC,partnerOf,buildJournal,balances}=window.IKE;
+const DEF={soc:'',socUr:'',branch:'Sub Branch',branchUr:'سب برانچ',addr:'',phone:'',p1en:'Malik Ashraf Aheer',p1ur:'ملک اشرف اہیر',p1:50,p2en:'Captain Azad',p2ur:'کیپٹن آزاد',p2:50};
+const S={tab:'home',investors:[],receipts:[],outs:[],deals:[],purchases:[],set:{},q:'',dq:'',pq:'',
+  loaded:{inv:0,rec:0,out:0,deal:0,pur:0,set:0},db:null,canWrite:true,open:null,payFor:null,confirm:null,pf:null,J:[],ACC:{},
+  rep:{kind:'tb',from:'',to:'',acc:'1000',party:''}};
+const SET=()=>Object.assign({},DEF,S.set);
+const $=id=>document.getElementById(id);
+const view=$('view'),sheetRoot=$('sheetRoot');
+try{const t=localStorage.getItem('ik_tab');if(t)S.tab=t;const k=localStorage.getItem('ik_rep');if(k)S.rep.kind=k}catch(e){}
+
+/* ---------- helpers ---------- */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtN=n=>Math.round(Number(n)||0).toLocaleString('en-IN');
+const rs=n=>{const v=Math.round(Number(n)||0);return (v<0?'−':'')+'Rs '+Math.abs(v).toLocaleString('en-IN')};
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmtD=s=>{if(!s)return '';const [y,m,d]=s.split('-').map(Number);return d+' '+MONTHS[m-1]+' '+y};
+const fyStart=()=>{const t=todayStr();const y=Number(t.slice(0,4)),m=Number(t.slice(5,7));return (m>=7?y:y-1)+'-07-01'};
+function toast(msg){const t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2800)}
+const clean=o=>JSON.parse(JSON.stringify(o));
+const U=s=>`<span class="ur" lang="ur" dir="rtl">${s}</span>`;
+const LR=(en,ur)=>`<span class="lrow"><span>${en}</span>${U(ur)}</span>`;
+const H2=(en,ur)=>`<h2 class="bh">${en} ${U(ur)}</h2>`;
+const LBL=(en,ur)=>`<span class="lbl lrow"><span>${en}</span>${U(ur)}</span>`;
+const F=(en,ur,inner,cls)=>`<label class="f${cls?' '+cls:''}">${LR(en,ur)}${inner}</label>`;
+const BT=(en,ur)=>`<span>${en}</span>${U(ur)}`;
+const T=(en,ur)=>en+' · '+ur;
+const EMPTY=(en,ur,hint)=>`<div class="empty"><strong>${en}</strong>${U(ur)}${hint?`<div class="note" style="margin-top:6px">${hint}</div>`:''}</div>`;
+const PILL={paid:['Paid','ادا','p-ok'],short:['Part paid','جزوی','p-due'],late:['Late','تاخیر','p-late'],due:['Due this month','اس ماہ','p-due'],up:['Upcoming','آئندہ','p-up'],recv:['Received','وصول','p-ok']};
+const pill=k=>{const p=PILL[k];return p?`<span class="pill ${p[2]}">${p[0]} ${U(p[1])}</span>`:''};
+const MODES=[['Cheque','چیک'],['Bank transfer','بینک ٹرانسفر'],['Cash','نقد']];
+function waNum(p){let n=String(p||'').replace(/\D/g,'');if(!n)return '';if(n.startsWith('00'))n=n.slice(2);if(n.startsWith('0'))n='92'+n.slice(1);else if(n.length===10&&n.startsWith('3'))n='92'+n;return n}
+const WA_ICON='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2c-1.5 0-3-.4-4.3-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s.9 2.5 1 2.7c.1.2 1.8 2.8 4.4 3.9 1.6.7 2.3.8 3.1.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3z"/></svg>';
+function waLink(phone,text,label){const n=waNum(phone);if(!n)return '';if(S.demo)return `<button type="button" class="wa" data-act="wademo">${WA_ICON}${label}</button>`;return `<a class="wa" href="https://wa.me/${n}${text?'?text='+encodeURIComponent(text):''}" target="_blank" rel="noopener">${WA_ICON}${label}</a>`}
+function contact(phone,party){if(!phone)return `<div class="note">${T('No WhatsApp number','واٹس ایپ نمبر درج نہیں')}</div>`;return `<div class="contact"><span class="phone">${esc(phone)}</span>${waLink(phone,'Assalam o Alaikum '+party+',','WhatsApp')}</div>`}
+function sig(){const s=SET();return s.soc?`\n— ${s.soc}${s.branch?', '+s.branch:''}`:''}
+function msgDone(party,what,amt,date,ref,left,incoming){return `Assalam o Alaikum ${party},\n${incoming?'Received':'Paid'}: ${what} — ${rs(amt)} on ${fmtD(date)}${ref?' (ref '+ref+')':''}.\nRemaining balance: ${rs(left)}.\n\n${what} کی رقم ${rs(amt)} ${incoming?'وصول ہو گئی ہے':'ادا کر دی گئی ہے'}۔ بقایا: ${rs(left)}۔\nشکریہ${sig()}`}
+function msgRemind(party,what,amt,due){return `Assalam o Alaikum ${party},\nReminder: ${what} of ${rs(amt)} is due on ${fmtD(due)}.\n\nیاد دہانی: ${what} کی ${rs(amt)} کی ادائیگی ${fmtD(due)} کو واجب ہے۔\nشکریہ${sig()}`}
+const dealPaid=d=>(d.payments||[]).reduce((a,p)=>a+num(p.amount),0);
+const hoGotFor=id=>S.receipts.filter(r=>r.purpose==='land'&&r.purId===id);
+const nb=(b,a)=>{const x=b[a];return x?x.dr-x.cr:0};
+const accCell=a=>{const x=S.ACC[a]||[a,'',''];return `${a} · ${esc(x[0])}${U(esc(x[1]))}`};
+const D=()=>({investors:S.investors,purchases:S.purchases,deals:S.deals,receipts:S.receipts,outs:S.outs});
+
+/* ---------- header & tabs ---------- */
+const TABS=[['home','Dashboard','خلاصہ'],['inv','Investors','سرمایہ کار'],['pur','Land','زمین'],['deal','Commission','کمیشن'],['ho','Cash','نقدی'],['rep','Reports','رپورٹس']];
+$('tabs').innerHTML=TABS.map(t=>`<button role="tab" id="t-${t[0]}" data-tab="${t[0]}" aria-selected="false"><span>${t[1]}</span>${U(t[2])}</button>`).join('');
+const GEAR='<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
+function renderBand(){
+  const s=SET();const b=balances(S.J,todayStr());const cash=nb(b,'1000');
+  const init=(s.soc||'Society Ledger').split(/\s+/).filter(w=>/^[A-Za-z]/.test(w)).slice(0,2).map(w=>w[0]).join('').toUpperCase()||'IK';
+  $('band').innerHTML=`<div class="band-in">
+    <div class="ident"><div class="seal" aria-hidden="true">${esc(init)}</div><div class="names">
+      <div class="soc">${s.soc?esc(s.soc):'Society Name'}</div>
+      ${s.socUr?`<div class="soc-ur ur" lang="ur" dir="rtl">${esc(s.socUr)}</div>`:''}
+      <div class="branch"><span>${esc(s.branch)}</span>${U(esc(s.branchUr))}</div>
+      ${s.addr||s.phone?`<div class="addr">${esc(s.addr)}${s.addr&&s.phone?' · ':''}${esc(s.phone)}</div>`:''}
+      ${!s.soc&&S.canWrite&&S.db?`<button class="linkbtn" data-act="settings">${T('Set society name & partners','سوسائٹی کا نام اور شراکت دار درج کریں')}</button>`:''}
+    </div></div>
+    <div class="cashbox"><div class="k"><span>Cash in hand</span>${U('نقد رقم')}</div><div class="cashnum${cash<0?' neg':''}">${rs(cash)}</div><div class="asof">${T('As of '+fmtD(todayStr()),'بتاریخ')}</div>
+      <button class="demobtn" data-act="demo">${S.demo?BT('Exit examples','مثالیں بند کریں'):BT('See examples','مثالیں دیکھیں')}</button>
+      ${S.canWrite&&S.db?`<button class="gear" data-act="settings" aria-label="Settings · ترتیبات">${GEAR}</button>`:''}</div>
+  </div>`;
+}
+
+/* ---------- views ---------- */
+function render(){
+  S.ACC=makeACC(SET());S.J=buildJournal(D(),SET(),todayStr());
+  renderBand();
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===S.tab)));
+  const db=$('demobar');db.hidden=!S.demo;if(S.demo)db.innerHTML=`<span><b>Examples</b> — practice freely, nothing here is saved. ${U('مثالی ڈیٹا — یہاں کچھ محفوظ نہیں ہوتا')}</span><button class="btn small" data-act="demo">${BT('Exit examples','مثالیں بند کریں')}</button>`;
+  const L=S.loaded,ready=L.inv&&L.rec&&L.out&&L.deal&&L.pur&&L.set;
+  if(!S.db){view.innerHTML=EMPTY(window.HF_APP?'Sign in to open the ledger':'Records are not loading',window.HF_APP?'کھاتہ کھولنے کے لیے سائن ان کریں':'ریکارڈ لوڈ نہیں ہو رہا',`${window.HF_APP?'':'Open this ledger on claude.ai while signed in — that is where the records are kept.'}<div style="margin-top:12px"><button class="btn small" data-act="demo">${BT('See examples','مثالیں دیکھیں')}</button></div>`);return}
+  if(!ready){view.innerHTML=EMPTY('Opening the ledger…','کھاتہ کھل رہا ہے');return}
+  view.innerHTML=({home:homeView,inv:invView,pur:purView,deal:dealView,ho:cashView,rep:repView}[S.tab]||homeView)();
+  const t=S.open&&S.open.type;
+  const focused=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#dpayForm,.payform');
+  if(!S.open||(['detail','purchase','deal'].includes(t)&&S.payFor==null&&!focused))renderSheet();
+}
+function ops(){
+  const today=todayStr();const out=[],inc=[];let late=0,lateAmt=0;
+  S.investors.forEach(inv=>schedule(inv,today).rows.forEach(r=>{if(r.st==='late'||r.st==='due'){out.push({k:'open',id:inv.id,name:inv.name,label:inv.plan==='end'?'Investor return (lump sum)':'Investor return '+r.i+'/'+inv.months,due:r.due,amt:r.amt,st:r.st});if(r.st==='late'){late++;lateAmt+=r.amt}}}));
+  S.purchases.forEach(pu=>{purSched(pu,today).rows.forEach(r=>{if(r.st==='late'||r.st==='due'){out.push({k:'pur',id:pu.id,name:pu.seller,label:'Land seller · '+(r.label||'Installment')+(pu.ref?' · '+pu.ref:''),due:r.due,amt:r.amt,st:r.st});if(r.st==='late'){late++;lateAmt+=r.amt}}});
+    const ss=saleSched(pu,today);if(ss)ss.rows.forEach(r=>{if(!r.p&&(r.st==='late'||r.st==='due'))inc.push({id:pu.id,name:pu.sale.buyer,label:'Buyer · '+(r.label||'Installment')+(pu.ref?' · '+pu.ref:''),due:r.due,amt:r.amt,st:r.st})})});
+  out.sort((a,b)=>a.due.localeCompare(b.due));inc.sort((a,b)=>a.due.localeCompare(b.due));
+  return {out,inc,late,lateAmt};
+}
+function dueRow(x,dataKey,incoming){return `<button class="rowbtn" data-${dataKey}="${esc(x.id)}"><div class="row" style="width:100%"><div class="main"><div class="t">${esc(x.name)}</div><div class="m">${esc(x.label)} · ${fmtD(x.due)}</div></div><div class="amt"><div class="num ${incoming?'plus':''}">${rs(x.amt)}</div>${pill(x.st)}</div></div></button>`}
+function homeView(){
+  const b=balances(S.J,todayStr());const o=ops();
+  const cash=nb(b,'1000'),owedInv=-(nb(b,'2400')+nb(b,'2410')),land=nb(b,'1500'),recv=nb(b,'1600')+nb(b,'1610'),pay=-(nb(b,'2100')+nb(b,'2200')),hoAcc=-nb(b,'2500');
+  const pm=balances(S.J,todayStr(),fyStart());let profit=0;Object.keys(pm).forEach(a=>{const t=S.ACC[a]&&S.ACC[a][2];if(t==='I')profit+=pm[a].cr-pm[a].dr;if(t==='X')profit-=pm[a].dr-pm[a].cr});
+  const need=o.out.reduce((a,x)=>a+x.amt,0);
+  return `<section>${S.demo?guideHTML():''}
+    <div class="stats three">
+      <div class="stat">${LBL('Owed to investors','سرمایہ کاروں کو واجب')}<span class="num">${rs(owedInv)}</span><small>${S.investors.length} investors · their money + profit due so far</small></div>
+      <div class="stat">${LBL('Land we own','ہماری زمین')}<span class="num">${rs(land)}</span><small>At cost, still with sub-branch</small></div>
+      <div class="stat">${LBL('To receive','لینا ہے')}<span class="num plus">${rs(recv)}</span><small>Head Office ${rs(nb(b,'1600'))} · buyers ${rs(nb(b,'1610'))}</small></div>
+      <div class="stat">${LBL('To pay','دینا ہے')}<span class="num minus">${rs(pay)}</span><small>Land sellers ${rs(-nb(b,'2100'))} · agents ${rs(-nb(b,'2200'))}</small></div>
+      <div class="stat">${LBL('Head Office advances','ہیڈ آفس کی پیشگی')}<span class="num">${rs(hoAcc)}</span><small>Advances received from Head Office</small></div>
+      <div class="stat">${LBL('Net profit this year','اس سال کا خالص منافع')}<span class="num ${profit>=0?'plus':'minus'}">${rs(profit)}</span><small>Since ${fmtD(fyStart())}</small></div>
+    </div>
+    ${o.out.length&&cash<need?`<div class="banner">${T(`Payments due now total ${rs(need)} but cash is ${rs(cash)} — request ${rs(need-cash)} from Head Office.`,'واجب ادائیگیوں کے لیے نقدی کم ہے')}</div>`:''}
+    <div class="bar">${H2('Payments due','واجب ادائیگیاں')}${o.late?`<span class="pill p-late">${o.late} late · ${rs(o.lateAmt)}</span>`:''}</div>
+    ${o.out.length?`<div class="list">${o.out.map(x=>dueRow(x,x.k,false)).join('')}</div>`:EMPTY('Nothing due this month','اس ماہ کوئی ادائیگی واجب نہیں')}
+    ${o.inc.length?`<div class="bar">${H2('Collections due','واجب وصولیاں')}</div><div class="list">${o.inc.map(x=>dueRow(x,'pur',true)).join('')}</div>`:''}
+  </section>`;
+}
+function invView(){
+  const q=S.q.trim().toLowerCase();const today=todayStr();
+  const list=S.investors.filter(i=>!q||(i.name+' '+(i.phone||'')+' '+(i.ref||'')).toLowerCase().includes(q)).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  const rows=list.map(inv=>{const s=schedule(inv,today);const bad=s.rows.some(r=>r.st==='late')?'late':s.rows.some(r=>r.st==='due')?'due':s.left<=0?'paid':'';
+    return `<button class="rowbtn" data-open="${esc(inv.id)}"><div class="row" style="width:100%"><div class="main"><div class="t">${esc(inv.name)}</div>
+    <div class="m">${esc(inv.ref||'')}${inv.ref?' · ':''}${rs(inv.amount)} @ ${inv.pct}% · ${fmtD(inv.start)}</div></div>
+    <div class="amt"><div class="num">${rs(s.left)}</div>${bad?pill(bad):`<span class="note">${T('remaining','بقایا')}</span>`}</div></div></button>`}).join('');
+  return `<section>
+    <div class="bar">${H2('Investors','سرمایہ کار')}${S.canWrite?`<button class="btn small" data-act="newInv">${BT('+ New investor','نیا سرمایہ کار')}</button>`:''}</div>
+    ${S.investors.length?`<input id="search" type="search" placeholder="${T('Search name, WhatsApp or file no.','تلاش')}" value="${esc(S.q)}">`:''}
+    ${S.investors.length?(list.length?`<div class="list">${rows}</div>`:EMPTY('No match','کوئی نتیجہ نہیں')):EMPTY('No investors yet','ابھی کوئی سرمایہ کار درج نہیں','Tap “New investor”, enter amount, date and profit % — the return schedule builds itself.')}
+  </section>`;
+}
+function purView(){
+  const q=S.pq.trim().toLowerCase();const today=todayStr();
+  const list=S.purchases.filter(p=>!q||(p.seller+' '+(p.phone||'')+' '+(p.ref||'')+' '+(p.location||'')).toLowerCase().includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  let tot=0,paid=0;S.purchases.forEach(pu=>{const s=purSched(pu,today);tot+=s.total;paid+=s.paidSum});
+  const rows=list.map(pu=>{const s=purSched(pu,today);const bad=s.rows.some(r=>r.st==='late')?'late':s.rows.some(r=>r.st==='due')?'due':s.left<=0?'paid':'';
+    const tag=pu.dispo==='ho'?`<span class="pill p-brass">To Head Office ${U('ہیڈ آفس')}</span>`:pu.dispo==='sold'?`<span class="pill p-brass">Sold ${U('فروخت')}</span>`:'';
+    return `<button class="rowbtn" data-pur="${esc(pu.id)}"><div class="row" style="width:100%"><div class="main"><div class="t">${esc(pu.ref||'Land')}${pu.location?' · '+esc(pu.location):''}</div>
+    <div class="m">${esc(pu.seller)} · ${rs(pu.total)} · ${fmtD(pu.date)}</div></div>
+    <div class="amt"><div class="num">${rs(s.left)}</div>${bad?pill(bad):''}${tag}</div></div></button>`}).join('');
+  return `<section>
+    <div class="bar">${H2('Land','زمین')}${S.canWrite?`<button class="btn small" data-act="newPur">${BT('+ New purchase','نئی خریداری')}</button>`:''}</div>
+    <div class="stats"><div class="stat">${LBL('Total cost','کل لاگت')}<span class="num">${rs(tot)}</span><small>${S.purchases.length} deals</small></div>
+    <div class="stat">${LBL('Still to pay sellers','فروشوں کو باقی')}<span class="num minus">${rs(tot-paid)}</span><small>Paid ${rs(paid)}</small></div></div>
+    ${S.purchases.length?`<input id="psearch" type="search" placeholder="${T('Search seller, plot or location','تلاش')}" value="${esc(S.pq)}">`:''}
+    ${S.purchases.length?(list.length?`<div class="list">${rows}</div>`:EMPTY('No match','کوئی نتیجہ نہیں')):EMPTY('No land purchases yet','ابھی کوئی خریداری درج نہیں','Record seller, price and down payment, then build the payment schedule for that deal.')}
+  </section>`;
+}
+function dealView(){
+  const q=S.dq.trim().toLowerCase();let tot=0,pd=0;S.deals.forEach(d=>{tot+=num(d.commission);pd+=dealPaid(d)});
+  const list=S.deals.filter(d=>!q||(d.agent+' '+(d.phone||'')+' '+(d.ref||'')).toLowerCase().includes(q)).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const rows=list.map(d=>{const p=dealPaid(d),left=num(d.commission)-p;
+    return `<button class="rowbtn" data-deal="${esc(d.id)}"><div class="row" style="width:100%"><div class="main"><div class="t">${esc(d.agent)}</div>
+    <div class="m">${esc(d.ref||'Deal')} · ${fmtD(d.date)}${d.value?' · deal '+rs(d.value):''}</div></div>
+    <div class="amt"><div class="num">${rs(left)}</div>${left<=0?pill('paid'):p>0?pill('short'):pill('up')}</div></div></button>`}).join('');
+  return `<section>
+    <div class="bar">${H2('Commission','کمیشن')}${S.canWrite?`<button class="btn small" data-act="newDeal">${BT('+ New deal','نیا سودا')}</button>`:''}</div>
+    <div class="stats"><div class="stat">${LBL('Total commission','کل کمیشن')}<span class="num">${rs(tot)}</span><small>${S.deals.length} deals</small></div>
+    <div class="stat">${LBL('Still to pay','باقی ادائیگی')}<span class="num minus">${rs(tot-pd)}</span><small>Paid ${rs(pd)}</small></div></div>
+    ${S.deals.length?`<input id="dsearch" type="search" placeholder="${T('Search agent or plot','تلاش')}" value="${esc(S.dq)}">`:''}
+    ${S.deals.length?(list.length?`<div class="list">${rows}</div>`:EMPTY('No match','کوئی نتیجہ نہیں')):EMPTY('No commission deals yet','ابھی کوئی سودا درج نہیں','When an agent brings a deal, record the agent, plot and commission here.')}
+  </section>`;
+}
+const PURP={advance:['Head Office — advance / funding','ہیڈ آفس — پیشگی / فنڈنگ'],other:['Head Office — other','ہیڈ آفس — دیگر'],land:['Head Office — price of land handed over','ہیڈ آفس — حوالہ شدہ زمین کی قیمت'],capA:['Capital introduced','شراکت دار کا سرمایہ'],capZ:['Capital introduced','شراکت دار کا سرمایہ']};
+const KIND={owner:['Partner withdrawal','شراکت دار نے رقم نکالی'],office:['Office expense','دفتری خرچ'],other:['Other expense','دیگر خرچ']};
+function whoName(who){const s=SET();const w=partnerOf(who,s);return w==='A'?s.p1en:w==='Z'?s.p2en:'Both partners'}
+function cashView(){
+  const b=balances(S.J,todayStr());const s=SET();
+  const list=[...S.receipts.map(r=>({...r,dir:'in'})),...S.outs.map(o=>({...o,dir:'out'}))].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||'').localeCompare(a.createdAt||''));
+  const rows=list.map(r=>{const key=(r.dir==='in'?'rec:':'out:')+r.id;let t,u;
+    if(r.dir==='in'){const p=PURP[r.purpose]||PURP.advance;t=p[0];u=p[1];if(r.purpose==='capA')t+=' — '+s.p1en;if(r.purpose==='capZ')t+=' — '+s.p2en;const lp=r.purpose==='land'?S.purchases.find(x=>x.id===r.purId):null;if(lp)t+=' · '+(lp.ref||lp.seller)}
+    else{const k=KIND[r.kind]||KIND.other;t=k[0];u=k[1];if(r.kind==='owner')t+=' — '+whoName(r.who)}
+    return `<div class="row"><div class="main"><div class="t">${esc(t)} ${U(u)}</div><div class="m">${fmtD(r.date)} · ${esc(r.ref||'No ref')}${r.note?' · '+esc(r.note):''}</div></div>
+    <div class="amt"><div class="num ${r.dir==='in'?'plus':'minus'}">${r.dir==='in'?'+':'−'} ${rs(r.amount)}</div>${S.canWrite?`<button class="btn danger small" data-del="${esc(key)}">${S.confirm===key?T('Confirm?','یقینی؟'):T('Delete','حذف')}</button>`:''}</div></div>`}).join('');
+  return `<section>
+    <div class="bar">${H2('Cash','نقدی')}${S.canWrite?`<div class="bar"><button class="btn small" data-act="newRec">${BT('+ Receipt','وصولی')}</button><button class="btn ghost small" data-act="newOut">${BT('− Payment','ادائیگی')}</button></div>`:''}</div>
+    <div class="stats three">
+      <div class="stat">${LBL('Head Office advances','ہیڈ آفس پیشگی')}<span class="num">${rs(-nb(b,'2500'))}</span><small>Includes all Head Office partners’ money</small></div>
+      <div class="stat">${LBL('Taken out — '+esc(s.p1en),'نکالا — '+esc(s.p1ur))}<span class="num minus">${rs(nb(b,'3200'))}</span><small>Share ${s.p1}%</small></div>
+      <div class="stat">${LBL('Taken out — '+esc(s.p2en),'نکالا — '+esc(s.p2ur))}<span class="num minus">${rs(nb(b,'3210'))}</span><small>Share ${s.p2}%</small></div>
+    </div>
+    <p class="note" style="margin:0">${T('Investor, land and commission payments are entered from their own tabs. The full Cash Book is under Reports.','مکمل روکڑ بہی رپورٹس میں ہے')}</p>
+    ${list.length?`<div class="list">${rows}</div>`:EMPTY('No receipts or payments yet','ابھی کوئی اندراج نہیں','Use “Receipt” for money from Head Office or partners, “Payment” when a partner takes money or for expenses.')}
+  </section>`;
+}
+
+/* ---------- reports ---------- */
+const NAT=a=>{const t=S.ACC[a]&&S.ACC[a][2];return t==='A'||t==='X'?1:-1};
+function repTB(){const r=S.rep;const m=balances(S.J,r.to);let td=0,tc=0;const csv=[['Account','Name','Debit','Credit']];
+  const rows=Object.keys(S.ACC).filter(a=>m[a]&&(m[a].dr||m[a].cr)).map(a=>{const n=m[a].dr-m[a].cr;const d=n>0?n:0,c=n<0?-n:0;td+=d;tc+=c;csv.push([a,S.ACC[a][0],d,c]);
+    return `<tr><td>${accCell(a)}</td><td class="n">${d?fmtN(d):''}</td><td class="n">${c?fmtN(c):''}</td></tr>`}).join('');
+  csv.push(['','Total',td,tc]);const ok=td===tc;
+  return {t:['Accounts Check (Trial Balance)','میزانِ آزمائشی'],p:'As of '+fmtD(r.to),csv,html:`<div class="tblwrap"><table class="tbl"><thead><tr><th>Account ${U('کھاتہ')}</th><th class="n">Debit ${U('بنام')}</th><th class="n">Credit ${U('جمع')}</th></tr></thead><tbody>${rows||`<tr><td colspan="3">${T('No entries','کوئی اندراج نہیں')}</td></tr>`}</tbody><tfoot><tr><td>Total ${U('کل')}</td><td class="n">${fmtN(td)}</td><td class="n">${fmtN(tc)}</td></tr></tfoot></table></div>
+  <div class="check">${ok?pill('paid').replace('Paid','Balanced').replace('ادا','متوازن'):`<span class="pill p-late">Not balanced · difference ${fmtN(td-tc)}</span>`}</div>`}}
+function plData(from,to){const m=balances(S.J,to,from);const inc=[],exp=[];let ti=0,te=0;
+  Object.keys(S.ACC).forEach(a=>{const x=m[a];if(!x)return;const t=S.ACC[a][2];if(t==='I'){const v=x.cr-x.dr;if(v){inc.push([a,v]);ti+=v}}if(t==='X'){const v=x.dr-x.cr;if(v){exp.push([a,v]);te+=v}}});
+  return {inc,exp,ti,te,net:ti-te}}
+function repPL(){const r=S.rep;const s=SET();const d=plData(r.from,r.to);const csv=[['Section','Account','Name','Amount']];
+  const line=(a,v)=>`<tr><td>${accCell(a)}</td><td class="n">${fmtN(v)}</td></tr>`;
+  d.inc.forEach(([a,v])=>csv.push(['Income',a,S.ACC[a][0],v]));d.exp.forEach(([a,v])=>csv.push(['Expenses',a,S.ACC[a][0],v]));csv.push(['','','Net profit',d.net]);
+  const tot=(Number(s.p1)||0)+(Number(s.p2)||0)||100;const sh1=Math.round(d.net*(Number(s.p1)||0)/tot);
+  return {t:['Profit & Loss Account','نفع و نقصان'],p:fmtD(r.from)+' – '+fmtD(r.to),csv,html:`<div class="tblwrap"><table class="tbl"><thead><tr><th>Particulars ${U('تفصیل')}</th><th class="n">Amount ${U('رقم')}</th></tr></thead><tbody>
+    <tr class="sec"><td colspan="2">Income ${U('آمدنی')}</td></tr>${d.inc.map(x=>line(...x)).join('')||`<tr><td class="note">—</td><td></td></tr>`}
+    <tr class="sub"><td>Total income ${U('کل آمدنی')}</td><td class="n">${fmtN(d.ti)}</td></tr>
+    <tr class="sec"><td colspan="2">Expenses ${U('اخراجات')}</td></tr>${d.exp.map(x=>line(...x)).join('')||`<tr><td class="note">—</td><td></td></tr>`}
+    <tr class="sub"><td>Total expenses ${U('کل اخراجات')}</td><td class="n">${fmtN(d.te)}</td></tr>
+    <tr class="grand"><td>Net ${d.net>=0?'profit':'loss'} ${U(d.net>=0?'خالص منافع':'خالص نقصان')}</td><td class="n ${d.net>=0?'plus':'minus'}">${fmtN(d.net)}</td></tr>
+    <tr class="sec"><td colspan="2">Profit split ${U('منافع کی تقسیم')}</td></tr>
+    <tr><td>${esc(s.p1en)} (${s.p1}%)${U(esc(s.p1ur))}</td><td class="n">${fmtN(sh1)}</td></tr>
+    <tr><td>${esc(s.p2en)} (${s.p2}%)${U(esc(s.p2ur))}</td><td class="n">${fmtN(d.net-sh1)}</td></tr>
+  </tbody></table></div>`}}
+function repBS(){const r=S.rep;const s=SET();const m=balances(S.J,r.to);const g=a=>{const x=m[a];return x?x.dr-x.cr:0};
+  const assets=['1000','1500','1600','1610'].map(a=>[a,g(a)]).filter(x=>x[1]);const liabs=['2100','2200','2400','2410','2500'].map(a=>[a,-g(a)]).filter(x=>x[1]);
+  const ta=assets.reduce((a,x)=>a+x[1],0),tl=liabs.reduce((a,x)=>a+x[1],0);
+  const d=plData('',r.to);const cap1=-g('3100'),cap2=-g('3110'),dr1=g('3200'),dr2=g('3210'),obe=-g('3900');
+  const tot=(Number(s.p1)||0)+(Number(s.p2)||0)||100;const sh1=Math.round(d.net*(Number(s.p1)||0)/tot),sh2=d.net-sh1;
+  const eq1=cap1+sh1-dr1,eq2=cap2+sh2-dr2,te=eq1+eq2+obe;const diff=ta-(tl+te);
+  const line=(a,v)=>`<tr><td>${accCell(a)}</td><td class="n">${fmtN(v)}</td></tr>`;
+  const pRows=(en,ur,cap,sh,drw,eq)=>`<tr><td>${esc(en)}${U(esc(ur))}<div class="note">Put in ${fmtN(cap)} + profit ${fmtN(sh)} − taken out ${fmtN(drw)}</div></td><td class="n">${fmtN(eq)}</td></tr>`;
+  const csv=[['Section','Item','Amount'],...assets.map(([a,v])=>['We own',S.ACC[a][0],v]),['','Total we own',ta],...liabs.map(([a,v])=>['We owe',S.ACC[a][0],v]),['','Total we owe',tl],['Partners',s.p1en,eq1],['Partners',s.p2en,eq2],['Partners','Old records',obe],['','Total partners share',te],['','What we owe + partners share',tl+te]];
+  return {t:['What We Own & Owe (Balance Sheet)','میزانیہ'],p:'As of '+fmtD(r.to),csv,html:`<div class="tblwrap"><table class="tbl"><thead><tr><th>Particulars ${U('تفصیل')}</th><th class="n">Amount ${U('رقم')}</th></tr></thead><tbody>
+    <tr class="sec"><td colspan="2">What we own ${U('اثاثے')}</td></tr>${assets.map(x=>line(...x)).join('')}
+    <tr class="grand"><td>Total we own ${U('کل اثاثے')}</td><td class="n">${fmtN(ta)}</td></tr>
+    <tr class="sec"><td colspan="2">What we owe ${U('واجبات')}</td></tr>${liabs.map(x=>line(...x)).join('')}
+    <tr class="sub"><td>Total we owe ${U('کل واجبات')}</td><td class="n">${fmtN(tl)}</td></tr>
+    <tr class="sec"><td colspan="2">Partners’ share ${U('شراکت داروں کا حصہ')}</td></tr>
+    ${pRows(s.p1en,s.p1ur,cap1,sh1,dr1,eq1)}${pRows(s.p2en,s.p2ur,cap2,sh2,dr2,eq2)}
+    ${obe?`<tr><td>${accCell('3900')}<div class="note">Money that came before this app — partners should agree how to settle it</div></td><td class="n">${fmtN(obe)}</td></tr>`:''}
+    <tr class="sub"><td>Total partners’ share ${U('کل حصہ')}</td><td class="n">${fmtN(te)}</td></tr>
+    <tr class="grand"><td>What we owe + partners’ share ${U('واجبات + حصہ')}</td><td class="n">${fmtN(tl+te)}</td></tr>
+  </tbody></table></div><div class="check">${diff===0?`<span class="pill p-ok">Balanced ${U('متوازن')}</span>`:`<span class="pill p-late">Difference ${fmtN(diff)}</span>`}</div>`}}
+function ledgerData(acc,party,from,to){let open=0;const rows=[];
+  S.J.forEach(e=>{e.lines.forEach(l=>{if(l.a!==acc)return;if(party&&l.p!==party)return;const v=(l.dr||0)-(l.cr||0);if(from&&e.date<from){open+=v;return}if(to&&e.date>to)return;rows.push({e,l})})});return {open,rows}}
+function repLedger(acc){const r=S.rep;acc=acc||r.acc;const party=acc===r.acc?r.party:'';const d=ledgerData(acc,party,r.from,r.to);let bal=d.open;const csv=[['Date','JV','Particulars','Debit','Credit','Balance']];
+  const fb=v=>fmtN(Math.abs(v))+(v===0?'':v>0?' Dr':' Cr');
+  csv.push(['','','Opening balance','','',fb(d.open)]);let td=0,tc=0;
+  const rows=d.rows.map(({e,l})=>{bal+=(l.dr||0)-(l.cr||0);td+=l.dr||0;tc+=l.cr||0;csv.push([e.date,e.no,e.narr+(l.p&&!party?' ['+l.p+']':''),l.dr||'',l.cr||'',fb(bal)]);
+    return `<tr><td>${fmtD(e.date)}<div class="note">${e.no}</div></td><td>${esc(e.narr)}${l.p&&!party?`<div class="note">${esc(l.p)}</div>`:''}</td><td class="n">${l.dr?fmtN(l.dr):''}</td><td class="n">${l.cr?fmtN(l.cr):''}</td><td class="n">${fb(bal)}</td></tr>`}).join('');
+  csv.push(['','','Closing balance',td,tc,fb(bal)]);
+  const x=S.ACC[acc];
+  return {t:acc==='1000'?['Cash Book','روکڑ بہی']:['Account — '+x[0]+(party?' — '+party:''),'کھاتہ — '+x[1]],p:fmtD(r.from)+' – '+fmtD(r.to),csv,html:`<div class="tblwrap"><table class="tbl wide"><thead><tr><th>Date ${U('تاریخ')}</th><th>Particulars ${U('تفصیل')}</th><th class="n">Debit ${U('بنام')}</th><th class="n">Credit ${U('جمع')}</th><th class="n">Balance ${U('بقایا')}</th></tr></thead><tbody>
+    <tr class="narr"><td></td><td>Opening balance ${U('ابتدائی بقایا')}</td><td></td><td></td><td class="n">${fb(d.open)}</td></tr>${rows}</tbody>
+    <tfoot><tr><td></td><td>Closing balance ${U('اختتامی بقایا')}</td><td class="n">${fmtN(td)}</td><td class="n">${fmtN(tc)}</td><td class="n">${fb(bal)}</td></tr></tfoot></table></div>`}}
+function repJournal(){const r=S.rep;const es=S.J.filter(e=>(!r.from||e.date>=r.from)&&(!r.to||e.date<=r.to));let td=0,tc=0;const csv=[['Date','JV','Account','Name','Party','Debit','Credit','Narration']];
+  const rows=es.map(e=>`<tr class="narr"><td>${fmtD(e.date)}<div class="note">${e.no}</div></td><td colspan="3">${esc(e.narr)}</td></tr>`+e.lines.map(l=>{td+=l.dr||0;tc+=l.cr||0;csv.push([e.date,e.no,l.a,S.ACC[l.a][0],l.p||'',l.dr||'',l.cr||'',e.narr]);
+    return `<tr class="ln"><td></td><td class="${l.cr?'ind':''}">${l.cr?'To ':''}${l.a} · ${esc(S.ACC[l.a][0])}${l.p?` <span class="note">(${esc(l.p)})</span>`:''}</td><td class="n">${l.dr?fmtN(l.dr):''}</td><td class="n">${l.cr?fmtN(l.cr):''}</td></tr>`}).join('')).join('');
+  return {t:['All Entries (Journal)','روزنامچہ'],p:fmtD(r.from)+' – '+fmtD(r.to)+' · '+es.length+' entries',csv,html:`<div class="tblwrap"><table class="tbl wide"><thead><tr><th>Date ${U('تاریخ')}</th><th>Account ${U('کھاتہ')}</th><th class="n">Debit ${U('بنام')}</th><th class="n">Credit ${U('جمع')}</th></tr></thead><tbody>${rows||`<tr><td colspan="4">${T('No entries in this period','اس مدت میں کوئی اندراج نہیں')}</td></tr>`}</tbody>
+    <tfoot><tr><td></td><td>Total ${U('کل')}</td><td class="n">${fmtN(td)}</td><td class="n">${fmtN(tc)}</td></tr></tfoot></table></div>`}}
+function repParties(){const r=S.rep;const accs=['2400','2410','2100','2200','1600','1610','2500'];const csv=[['Account','Party','Balance']];let html='';
+  accs.forEach(a=>{const m={};S.J.forEach(e=>{if(e.date>r.to)return;e.lines.forEach(l=>{if(l.a!==a)return;const k=l.p||'—';m[k]=(m[k]||0)+((l.dr||0)-(l.cr||0))*NAT(a)})});
+    const ps=Object.entries(m).filter(x=>x[1]).sort((x,y)=>y[1]-x[1]);if(!ps.length)return;let t=0;
+    html+=`<tr class="sec"><td colspan="2">${esc(S.ACC[a][0])} ${U(S.ACC[a][1])}</td></tr>`+ps.map(([p,v])=>{t+=v;csv.push([S.ACC[a][0],p,v]);return `<tr><td>${esc(p)}</td><td class="n">${fmtN(v)}</td></tr>`}).join('')+`<tr class="sub"><td>Total</td><td class="n">${fmtN(t)}</td></tr>`});
+  return {t:['Who Owes What','کس کا کتنا بقایا'],p:'As of '+fmtD(r.to),csv,html:`<div class="tblwrap"><table class="tbl"><thead><tr><th>Party ${U('فریق')}</th><th class="n">Balance ${U('بقایا')}</th></tr></thead><tbody>${html||`<tr><td colspan="2">${T('No open balances','کوئی بقایا نہیں')}</td></tr>`}</tbody></table></div>`}}
+function repPartners(){const r=S.rep;const s=SET();const m=balances(S.J,r.to);const g=a=>{const x=m[a];return x?x.dr-x.cr:0};const d=plData('',r.to);
+  const tot=(Number(s.p1)||0)+(Number(s.p2)||0)||100;const sh1=Math.round(d.net*(Number(s.p1)||0)/tot),sh2=d.net-sh1;
+  const P=[[s.p1en,s.p1ur,s.p1,-g('3100'),sh1,g('3200')],[s.p2en,s.p2ur,s.p2,-g('3110'),sh2,g('3210')]];
+  const csv=[['Partner','Share %','Put in','Profit','Taken out','Balance']];
+  const rows=P.map(([en,ur,pc,cap,sh,drw])=>{const bal=cap+sh-drw;csv.push([en,pc,cap,sh,drw,bal]);return `<tr><td>${esc(en)}${U(esc(ur))}</td><td class="n">${pc}%</td><td class="n">${fmtN(cap)}</td><td class="n">${fmtN(sh)}</td><td class="n">${fmtN(drw)}</td><td class="n">${fmtN(bal)}</td></tr>`}).join('');
+  const dr1=P[0][5],dr2=P[1][5],fair1=Math.round((dr1+dr2)*(Number(s.p1)||0)/tot),over=dr1-fair1;
+  return {t:['Partners’ Accounts','شراکت داروں کے کھاتے'],p:'As of '+fmtD(r.to),csv,html:`<div class="tblwrap"><table class="tbl wide"><thead><tr><th>Partner ${U('شراکت دار')}</th><th class="n">Share ${U('حصہ')}</th><th class="n">Put in ${U('ڈالا')}</th><th class="n">Profit ${U('منافع')}</th><th class="n">Taken out ${U('نکالا')}</th><th class="n">Balance ${U('بقایا')}</th></tr></thead><tbody>${rows}</tbody></table></div>
+  <div class="check">${over===0?`<span class="pill p-ok">Both have taken out money by their share ${U('نکاسی حصے کے مطابق ہے')}</span>`:`<span class="pill p-due">${esc(over>0?s.p1en:s.p2en)} has taken out ${rs(Math.abs(over))} more than his share ${U('حصے سے زیادہ نکاسی')}</span>`}</div>`}}
+const REPS=[['tb','Accounts check','میزانِ آزمائشی',repTB,0],['pl','Profit & Loss','نفع و نقصان',repPL,1],['bs','Own & owe','میزانیہ',repBS,0],['cash','Cash book','روکڑ بہی',()=>repLedger('1000'),1],['ledger','One account','کھاتہ',()=>repLedger(),1],['journal','All entries','روزنامچہ',repJournal,1],['parties','Who owes what','کس کا کتنا',repParties,0],['partners','Partners','شراکت دار',repPartners,0]];
+function repView(){const r=S.rep;if(!r.to)r.to=todayStr();if(!r.from)r.from=fyStart();const s=SET();
+  const def=REPS.find(x=>x[0]===r.kind)||REPS[0];const out=def[3]();S.lastRep=out;
+  const parties=r.kind==='ledger'?[...new Set(S.J.flatMap(e=>e.lines.filter(l=>l.a===r.acc&&l.p).map(l=>l.p)))].sort():[];
+  return `<section>
+    <div class="bar">${H2('Reports','رپورٹس')}<div class="bar"><button class="btn ghost small" data-act="csvRep">${BT('Download CSV','ڈاؤن لوڈ')}</button><button class="btn ghost small" data-act="csvAll">${BT('Export all data','تمام ڈیٹا')}</button></div></div>
+    <div class="seg" role="group" aria-label="Report">${REPS.map(x=>`<button data-rep="${x[0]}" aria-pressed="${x[0]===r.kind}">${x[1]} ${U(x[2])}</button>`).join('')}</div>
+    <div class="controls">
+      ${def[4]?F('From','سے',`<input id="rep_from" type="date" value="${esc(r.from)}">`):''}
+      ${F(def[4]?'To':'As of',def[4]?'تک':'بتاریخ',`<input id="rep_to" type="date" value="${esc(r.to)}">`)}
+      ${r.kind==='ledger'?F('Account','کھاتہ',`<select id="rep_acc">${Object.keys(S.ACC).map(a=>`<option value="${a}"${a===r.acc?' selected':''}>${a} · ${esc(S.ACC[a][0])}</option>`).join('')}</select>`):''}
+      ${r.kind==='ledger'&&parties.length?F('Party','فریق',`<select id="rep_party"><option value="">All parties · سب</option>${parties.map(p=>`<option${p===r.party?' selected':''}>${esc(p)}</option>`).join('')}</select>`):''}
+    </div>
+    <div class="stmt"><div class="stmt-h"><div class="stmt-soc">${esc(s.soc||'Society Name')} · ${esc(s.branch)}</div><div class="stmt-t"><span>${esc(out.t[0])}</span>${U(esc(out.t[1]))}</div><div class="stmt-p">${esc(out.p)}</div></div>${out.html}</div>
+    <p class="note" style="margin:0">${T('Every number here comes from your daily entries. Nobody types into the accounts by hand, so they always match.','تمام حسابات روزمرہ اندراجات سے دوہرے اندراج کے اصول پر بنتے ہیں')}</p>
+  </section>`;
+}
+
+/* ---------- sheets ---------- */
+const closeBtn=`<button class="x" data-close="1" aria-label="Close · بند کریں">×</button>`;
+const SHEAD=(en,ur,title)=>`<header><div>${LBL(en,ur)}<h2>${title}</h2></div>${closeBtn}</header>`;
+function renderSheet(){
+  if(!S.open){sheetRoot.innerHTML='';return}
+  const o=S.open;let inner='';
+  if(o.type==='inv')inner=invForm(o.id?S.investors.find(i=>i.id===o.id):null);
+  else if(o.type==='rec')inner=recForm();
+  else if(o.type==='out')inner=outForm();
+  else if(o.type==='set')inner=setForm();
+  else if(o.type==='dealform')inner=dealForm(o.id?S.deals.find(x=>x.id===o.id):null);
+  else if(o.type==='pform')inner=purForm();
+  else if(o.type==='hoform'){const pu=S.purchases.find(x=>x.id===o.id);if(!pu){S.open=null;sheetRoot.innerHTML='';return}inner=hoForm(pu)}
+  else{const src={detail:S.investors,deal:S.deals,purchase:S.purchases}[o.type];const item=src&&src.find(x=>x.id===o.id);
+    if(!item){inner=`<header><div>${LBL('Saving','محفوظ ہو رہا ہے')}<h2>…</h2></div>${closeBtn}</header>`}
+    else
+    inner=o.type==='detail'?detail(item):o.type==='deal'?dealDetail(item):purDetail(item)}
+  const keep=sheetRoot.querySelector('.sheet')?.scrollTop||0;
+  sheetRoot.innerHTML=`<div class="sheet-bg" data-close="1"><div class="sheet" role="dialog" aria-modal="true">${inner}</div></div>`;
+  const sh=sheetRoot.querySelector('.sheet');if(sh)sh.scrollTop=keep;
+}
+const modeOpts=first=>{const m=first==='Cash'?[MODES[2],MODES[0],MODES[1]]:MODES;return m.map(x=>`<option value="${x[0]}">${T(x[0],x[1])}</option>`).join('')};
+function payFormHTML(key,amt,first,incoming){return `<form class="payform" data-payform="${key}">
+  <div class="grid2">${F('Date','تاریخ',`<input id="p_date" type="date" required value="${todayStr()}">`)}${F('Amount','رقم',`<input id="p_amount" type="number" min="1" required value="${amt}">`)}
+  ${F('Method','طریقہ',`<select id="p_mode">${modeOpts(first)}</select>`)}${F('Cheque / ref no.','چیک / حوالہ نمبر','<input id="p_ref">')}</div>
+  <div class="bar" style="justify-content:flex-end"><button type="button" class="btn ghost small" data-cancelpay="1">${BT('Cancel','منسوخ')}</button><button class="btn small" type="submit">${incoming?BT('Record receipt','وصولی درج کریں'):BT('Record payment','ادائیگی درج کریں')}</button></div></form>`}
+const delBtn=(attr,id,key,en,ur)=>`<button type="button" class="btn danger" data-${attr}="${esc(id)}">${S.confirm===key?BT('Confirm delete','حذف کی تصدیق'):BT(en,ur)}</button>`;
+const saveRow=left=>`<div class="bar full">${left||'<span></span>'}<button class="btn" type="submit">${BT('Save','محفوظ کریں')}</button></div>`;
+
+function setForm(){const s=SET();const i=(id,v,ph,ur)=>`<input id="${id}" value="${esc(v)}"${ph?` placeholder="${esc(ph)}"`:''}${ur?' dir="rtl" lang="ur" style="font-family:var(--urdu)"':''}>`;
+  return `${SHEAD('Settings','ترتیبات','Society & partners')}
+  <form id="setForm" class="grid2">
+    ${F('Society name (English)','سوسائٹی کا نام (انگریزی)',i('s_soc',s.soc,'e.g. Green Valley Housing'),'full')}
+    ${F('Society name (Urdu)','سوسائٹی کا نام (اردو)',i('s_socUr',s.socUr,'',1),'full')}
+    ${F('Branch (English)','برانچ (انگریزی)',i('s_branch',s.branch))}
+    ${F('Branch (Urdu)','برانچ (اردو)',i('s_branchUr',s.branchUr,'',1))}
+    ${F('Address','پتہ',i('s_addr',s.addr),'full')}
+    ${F('Office phone','دفتر کا فون',i('s_phone',s.phone))}
+    <span></span>
+    <div class="box full"><span class="lbl lrow"><span>Partners of this branch</span>${U('اس برانچ کے شراکت دار')}</span>
+      <div class="grid3">${F('Partner 1','شراکت دار 1',i('s_p1en',s.p1en))}${F('Urdu name','اردو نام',i('s_p1ur',s.p1ur,'',1))}${F('Share %','حصہ',`<input id="s_p1" type="number" min="0" max="100" value="${esc(s.p1)}">`)}</div>
+      <div class="grid3">${F('Partner 2','شراکت دار 2',i('s_p2en',s.p2en))}${F('Urdu name','اردو نام',i('s_p2ur',s.p2ur,'',1))}${F('Share %','حصہ',`<input id="s_p2" type="number" min="0" max="100" value="${esc(s.p2)}">`)}</div>
+      <span class="note">Shares decide how profit and joint withdrawals are split. They must add up to 100.</span></div>
+    ${saveRow()}
+    ${window.HF_APP?`<div class="bar full" style="border-top:1px solid var(--line);padding-top:12px"><span class="note">${esc(window.HF_LOGIN||'')} · App version ${esc(window.APP_VER||'')}</span><button type="button" class="btn danger small" data-act="logout">${BT('Sign out','سائن آؤٹ')}</button></div>`:''}
+  </form>`}
+
+function invForm(inv){
+  const v=inv||{name:'',phone:'',ref:'',amount:'',start:todayStr(),months:12,pct:25,plan:'monthly',note:''};const ci=inv?inv.cashIn===true:true;
+  return `${SHEAD(inv?'Edit investor':'New investor',inv?'ترمیم':'نیا سرمایہ کار',inv?esc(inv.name):'Record an investment')}
+  <form id="invForm" class="grid2">
+    ${F('Name','نام',`<input id="f_name" required value="${esc(v.name)}">`,'full')}
+    ${F('WhatsApp number','واٹس ایپ نمبر',`<input id="f_phone" inputmode="tel" placeholder="03xx xxxxxxx" value="${esc(v.phone)}">`)}
+    ${F('File / plot no.','فائل / پلاٹ نمبر',`<input id="f_ref" value="${esc(v.ref)}">`)}
+    ${F('Amount (Rs)','رقم (روپے)',`<input id="f_amount" type="number" min="1" required inputmode="numeric" value="${esc(v.amount)}">`)}
+    ${F('Investment date','تاریخِ سرمایہ کاری',`<input id="f_start" type="date" required value="${esc(v.start)}">`)}
+    ${F('Profit %','منافع فیصد',`<input id="f_pct" type="number" min="0" step="0.1" required value="${esc(v.pct)}">`)}
+    ${F('Term (months)','مدت (مہینے)',`<input id="f_months" type="number" min="1" max="120" required value="${esc(v.months)}">`)}
+    ${F('Return plan','واپسی کا طریقہ',`<select id="f_plan"><option value="monthly"${v.plan!=='end'?' selected':''}>${T('Monthly installments','ماہانہ اقساط')}</option><option value="end"${v.plan==='end'?' selected':''}>${T('Lump sum at end of term','مدت کے آخر میں یکمشت')}</option></select>`,'full')}
+    ${F('Investment money','سرمایہ کی رقم',`<select id="f_cashin"><option value="1"${ci?' selected':''}>${T('Received into sub-branch cash','سب برانچ کی نقدی میں آئی')}</option><option value="0"${ci?'':' selected'}>${T('Came before this app, already spent (old record)','ایپ سے پہلے آ کر خرچ ہو چکی')}</option></select>`,'full')}
+    ${inv?'':F('Returns already paid before this app','ایپ سے پہلے ادا شدہ اقساط',`<input id="f_prepaid" type="number" min="0" max="120" value="0" inputmode="numeric"><span class="note">Leave 0 for a new investor. They are marked paid on their dates as old records.</span>`,'full')}
+    ${F('Note','نوٹ',`<textarea id="f_note" rows="2">${esc(v.note)}</textarea>`,'full')}
+    <div class="preview full" id="f_prev"></div>
+    ${saveRow(inv?delBtn('delinv',inv.id,'inv:'+inv.id,'Delete investor','حذف کریں'):'')}
+  </form>`;
+}
+function updPrev(){const p=$('f_prev');if(!p)return;
+  const a=Number($('f_amount').value)||0,pct=Number($('f_pct').value)||0,m=Math.max(1,Number($('f_months').value)||1),plan=$('f_plan').value;const tot=Math.round(a*(1+pct/100));
+  p.innerHTML=a?`Return <b class="num">${rs(tot)}</b> (profit ${rs(tot-a)}) — ${plan==='end'?`lump sum after ${m} months`:`${m} installments of <b class="num">${rs(Math.floor(tot/m))}</b>`} ${U('واپسی کا خلاصہ')}`:T('Enter the amount to see the return','رقم درج کریں')}
+function schedRowsHTML(rows,pre,phone,party,refTxt,left,incoming){
+  return rows.map(r=>{const key=pre+r.i;const what=(refTxt?refTxt+' — ':'')+(r.label||'Installment');
+    const paidLine=r.p?`<div class="m">${incoming?'Received':'Paid'}: ${fmtD(r.p.date)} · ${rs(r.p.amount)}${r.p.mode?' · '+esc(r.p.mode):''}${r.p.ref?' · '+esc(r.p.ref):''}</div>`:'';
+    const msg=r.p?msgDone(party,what,r.p.amount,r.p.date,r.p.ref,left,incoming):(incoming&&(r.st==='late'||r.st==='due')?msgRemind(party,what,r.amt,r.due):'');
+    const wa=phone&&msg?'<div style="margin-top:4px">'+waLink(phone,msg,r.p?'Send receipt · رسید':'Reminder · یاد دہانی')+'</div>':'';
+    let act='';if(S.canWrite)act=r.p?`<button class="btn ghost small" data-unpay="${key}">${S.confirm==='pay:'+key?T('Confirm?','یقینی؟'):T('Undo','واپس')}</button>`:`<button class="btn small" data-pay="${key}">${incoming?BT('Receive','وصول'):BT('Pay','ادا')}</button>`;
+    return `<div class="row"><span class="no">${pre==='i'?r.i:r.i+1}</span><div class="main"><div class="t">${esc(r.label||'Installment')} · ${fmtD(r.due)}</div>${paidLine}${wa}</div><div class="amt"><div class="num">${rs(r.amt)}</div>${incoming&&r.p?pill('recv'):pill(r.st)}</div>${act}</div>${S.payFor===key?payFormHTML(key,r.amt,incoming?'Cash':'Cheque',incoming):''}`}).join('');
+}
+function detail(inv){
+  const s=schedule(inv,todayStr());const rows=s.rows.map(r=>({...r,label:inv.plan==='end'?'Lump sum return':'Return '+r.i+'/'+inv.months}));
+  return `<header><div>${LBL(esc(inv.ref||'Investor'),'سرمایہ کار')}<h2>${esc(inv.name)}</h2>${contact(inv.phone,inv.name)}</div>${closeBtn}</header>
+  <div class="stats">
+    <div class="stat">${LBL('Investment','سرمایہ کاری')}<span class="num">${rs(inv.amount)}</span><small>${fmtD(inv.start)}${inv.cashIn===true?'':' · old record'}</small></div>
+    <div class="stat">${LBL('Total to return','کل واپسی')}<span class="num">${rs(s.total)}</span><small>Profit ${rs(s.profit)} (${inv.pct}%)</small></div>
+    <div class="stat">${LBL('Paid','ادا شدہ')}<span class="num">${rs(s.paidSum)}</span></div>
+    <div class="stat">${LBL('Remaining','بقایا')}<span class="num">${rs(s.left)}</span></div>
+  </div>
+  ${inv.note?`<p class="note" style="margin:0">${esc(inv.note)}</p>`:''}
+  <div class="bar">${H2('Return schedule','واپسی کا شیڈول')}${S.canWrite?`<button class="btn ghost small" data-edit="${esc(inv.id)}">${BT('Edit','ترمیم')}</button>`:''}</div>
+  <div class="list sched">${schedRowsHTML(rows,'i',inv.phone,inv.name,inv.ref,s.left,false)}</div>`;
+}
+
+/* land purchase / sale form (S.pf keeps working state) */
+function newPF(pu){
+  if(pu)return {mode:'buy',id:pu.id,seller:pu.seller||'',phone:pu.phone||'',ref:pu.ref||'',location:pu.location||'',date:pu.date||todayStr(),total:pu.total||'',note:pu.note||'',down:'',downPaid:true,n:'',gap:1,first:'',rows:clean(pu.schedule||[]),createdAt:pu.createdAt};
+  const d=todayStr();return {mode:'buy',seller:'',phone:'',ref:'',location:'',date:d,total:'',note:'',down:'',downPaid:true,n:6,gap:1,first:addMonths(d,1),rows:[]};
+}
+function newSF(pu){const s=pu.sale,d=todayStr();
+  if(s)return {mode:'sell',purId:pu.id,ref:pu.ref,seller:s.buyer||'',phone:s.phone||'',date:s.date||d,total:s.total||'',note:s.note||'',down:'',downPaid:true,n:'',gap:1,first:'',rows:clean(s.schedule||[])};
+  return {mode:'sell',purId:pu.id,ref:pu.ref,seller:'',phone:'',date:d,total:'',note:'',down:'',downPaid:true,n:6,gap:1,first:addMonths(d,1),rows:[]}}
+function syncPF(){if(!$('purForm')||!S.pf)return;const g=id=>{const e=$(id);return e?e.value:null};const p=S.pf;
+  [['seller','u_seller'],['phone','u_phone'],['ref','u_ref'],['location','u_loc'],['date','u_date'],['total','u_total'],['note','u_note'],['down','u_down'],['n','u_n'],['gap','u_gap'],['first','u_first']].forEach(([k,id])=>{const v=g(id);if(v!==null)p[k]=v});
+  const dp=$('u_downpaid');if(dp)p.downPaid=dp.checked;
+  p.rows.forEach((r,i)=>{const l=$('sr_l'+i),d=$('sr_d'+i),a=$('sr_a'+i);if(l)r.label=l.value;if(d)r.due=d.value;if(a)r.amount=Number(a.value)||0});
+}
+function genRows(){const p=S.pf;const total=Number(p.total)||0,down=Number(p.down)||0,n=Math.max(0,Number(p.n)||0),gap=Math.max(1,Number(p.gap)||1);const old=p.rows;const rows=[];
+  if(down>0)rows.push({label:'Down payment',due:p.date,amount:down,paid:p.downPaid?{date:p.date,amount:down,mode:'Cash',ref:''}:null});
+  const rem=total-down;
+  if(n>0&&rem>0){const per=Math.floor(rem/n);const first=p.first||addMonths(p.date,1);for(let i=1;i<=n;i++)rows.push({label:'Installment '+i,due:addMonths(first,(i-1)*gap),amount:i===n?rem-per*(n-1):per,paid:null})}
+  rows.forEach((r,i)=>{if(!r.paid&&old[i]&&old[i].paid)r.paid=old[i].paid});p.rows=rows;
+}
+function purForm(){
+  const p=S.pf;const sell=p.mode==='sell';const sum=p.rows.reduce((a,r)=>a+(Number(r.amount)||0),0);const total=Number(p.total)||0;
+  const rowsHTML=p.rows.map((r,i)=>`<div class="srow"><input id="sr_l${i}" value="${esc(r.label)}" aria-label="Item"><input id="sr_d${i}" type="date" value="${esc(r.due)}" aria-label="Date"><input id="sr_a${i}" type="number" min="0" value="${esc(r.amount)}" aria-label="Amount">${r.paid?pill(sell?'recv':'paid'):`<button type="button" class="btn ghost small" data-rmrow="${i}" aria-label="Remove">×</button>`}</div>`).join('');
+  return `${SHEAD(sell?'Direct sale · '+esc(p.ref||'Land'):p.id?'Edit purchase':'New purchase',sell?'براہِ راست فروخت':p.id?'ترمیم':'نئی خریداری',sell?'Sell without development':p.id?esc(p.ref||p.seller):'Record a land purchase')}
+  <form id="purForm" class="grid2">
+    ${F(sell?'Buyer name':'Seller (bought from)',sell?'خریدار کا نام':'فروخت کنندہ',`<input id="u_seller" required value="${esc(p.seller)}">`,'full')}
+    ${F('WhatsApp number','واٹس ایپ نمبر',`<input id="u_phone" inputmode="tel" placeholder="03xx xxxxxxx" value="${esc(p.phone)}">`)}
+    ${sell?'':F('Plot / khasra / file no.','پلاٹ / خسرہ / فائل نمبر',`<input id="u_ref" value="${esc(p.ref)}">`)}
+    ${sell?'':F('Location','مقام',`<input id="u_loc" value="${esc(p.location)}">`)}
+    ${F(sell?'Sale date':'Deal date',sell?'تاریخِ فروخت':'تاریخِ سودا',`<input id="u_date" type="date" required value="${esc(p.date)}">`)}
+    ${F(sell?'Sale price (Rs)':'Total price (Rs)',sell?'قیمتِ فروخت':'کل قیمت',`<input id="u_total" type="number" min="1" required inputmode="numeric" value="${esc(p.total)}">`,'full')}
+    <div class="box full">${LBL('Build the schedule','شیڈول بنائیں')}
+      <div class="grid3">${F('Down payment','بیعانہ',`<input id="u_down" type="number" min="0" inputmode="numeric" value="${esc(p.down)}">`)}
+        ${F('Installments','اقساط',`<input id="u_n" type="number" min="0" max="120" value="${esc(p.n)}">`)}
+        ${F('Every','ہر',`<select id="u_gap">${[[1,'Month','ماہ'],[2,'2 months','2 ماہ'],[3,'3 months','3 ماہ'],[6,'6 months','6 ماہ'],[12,'12 months','12 ماہ']].map(g=>`<option value="${g[0]}"${Number(p.gap)===g[0]?' selected':''}>${T(g[1],g[2])}</option>`).join('')}</select>`)}</div>
+      <div class="grid2">${F('First installment','پہلی قسط',`<input id="u_first" type="date" value="${esc(p.first)}">`)}
+        <label class="chk" style="align-self:end;padding-bottom:10px"><input id="u_downpaid" type="checkbox"${p.downPaid?' checked':''}> ${sell?T('Down payment received','بیعانہ وصول ہو چکا'):T('Down payment paid','بیعانہ ادا ہو چکا')}</label></div>
+      <button type="button" class="btn ghost small" data-gen="1" style="align-self:flex-start">${p.rows.length?BT('Rebuild schedule','دوبارہ بنائیں'):BT('Build schedule','شیڈول بنائیں')}</button>
+      <span class="note">Every deal is different — after building, change any date or amount below, or add installments.</span>
+    </div>
+    ${p.rows.length?`<div class="full" style="display:flex;flex-direction:column;gap:6px"><div class="srow lbl"><span>Item</span><span>Date</span><span>Amount</span><span></span></div>${rowsHTML}
+      <button type="button" class="btn ghost small" data-addrow="1" style="align-self:flex-start">${BT('+ Add installment','قسط شامل کریں')}</button>
+      <div class="${sum!==total?'warn':'note'}">Schedule total ${rs(sum)}${sum!==total?` — ${rs(Math.abs(total-sum))} ${sum<total?'short of':'over'} the price ${U('میزان قیمت سے مختلف ہے')}`:' — matches the price'}</div></div>`:''}
+    ${F('Note','نوٹ',`<input id="u_note" value="${esc(p.note)}">`,'full')}
+    ${saveRow(p.id&&!sell?delBtn('delpur',p.id,'pur:'+p.id,'Delete deal','حذف کریں'):'')}
+  </form>`;
+}
+function hoForm(pu){const v=pu.ho||{date:todayStr(),value:'',note:''};
+  return `${SHEAD(esc(pu.ref||'Land'),'زمین','Handed to Head Office')}
+  <form id="hoForm" class="grid2">
+    ${F('Handover date','تاریخِ حوالگی',`<input id="h_date" type="date" required value="${esc(v.date)}">`)}
+    ${F('Agreed amount from Head Office','ہیڈ آفس سے طے شدہ رقم',`<input id="h_value" type="number" min="0" required inputmode="numeric" value="${esc(v.value)}">`)}
+    <p class="note full" style="margin:0">Cost of this land is ${rs(pu.total)}. When Head Office pays, record it under Cash → Receipt → “price of land handed over” and pick this land.</p>
+    ${F('Note','نوٹ',`<input id="h_note" value="${esc(v.note)}">`,'full')}
+    ${saveRow()}
+  </form>`}
+const undoBtn=pu=>`<button class="btn danger small" data-undispo="${esc(pu.id)}">${S.confirm==='undispo:'+pu.id?T('Confirm?','یقینی؟'):T('Remove','ہٹائیں')}</button>`;
+function dispoHTML(pu,s){
+  const ss=saleSched(pu,todayStr());
+  if(pu.dispo==='ho'&&pu.ho){const v=num(pu.ho.value);const got=hoGotFor(pu.id).sort((a,b)=>(b.date||'').localeCompare(a.date||''));const sum=got.reduce((a,r)=>a+num(r.amount),0);
+    return `<div class="bar">${H2('Handed to Head Office','ہیڈ آفس کے حوالے')}${S.canWrite?`<div class="bar"><button class="btn ghost small" data-hoform="${esc(pu.id)}">${BT('Edit','ترمیم')}</button>${undoBtn(pu)}</div>`:''}</div>
+    <div class="stats"><div class="stat">${LBL('Agreed amount','طے شدہ رقم')}<span class="num">${rs(v)}</span><small>${fmtD(pu.ho.date)}</small></div>
+    <div class="stat">${LBL('Still due from HO','ہیڈ آفس سے باقی')}<span class="num">${rs(v-sum)}</span><small>Received ${rs(sum)}</small></div>
+    <div class="stat wide">${LBL('Profit on this land','اس زمین پر منافع')}<span class="num ${v-s.total>=0?'plus':'minus'}">${rs(v-s.total)}</span><small>Agreed amount − cost (commission separate)</small></div></div>
+    ${pu.ho.note?`<p class="note" style="margin:0">${esc(pu.ho.note)}</p>`:''}
+    ${got.length?`<div class="list">${got.map(r=>`<div class="row"><div class="main"><div class="t">${fmtD(r.date)}</div><div class="m">${esc(r.ref||'No ref')}${r.note?' · '+esc(r.note):''}</div></div><div class="amt"><div class="num plus">+ ${rs(r.amount)}</div></div></div>`).join('')}</div>`:EMPTY('Nothing received from Head Office yet','ابھی ہیڈ آفس سے کوئی رقم نہیں آئی')}`}
+  if(pu.dispo==='sold'&&ss){
+    return `<div class="bar">${H2('Sold directly','براہِ راست فروخت')}${S.canWrite?`<div class="bar"><button class="btn ghost small" data-sellform="${esc(pu.id)}">${BT('Edit','ترمیم')}</button>${undoBtn(pu)}</div>`:''}</div>
+    <div><div class="t" style="font-weight:600">${esc(pu.sale.buyer)}</div>${contact(pu.sale.phone,pu.sale.buyer)}</div>
+    <div class="stats"><div class="stat">${LBL('Sale price','قیمتِ فروخت')}<span class="num">${rs(ss.total)}</span><small>${fmtD(pu.sale.date)}</small></div>
+    <div class="stat">${LBL('Due from buyer','خریدار سے باقی')}<span class="num">${rs(ss.left)}</span><small>Received ${rs(ss.paidSum)}</small></div>
+    <div class="stat wide">${LBL('Profit on this land','اس زمین پر منافع')}<span class="num ${ss.total-s.total>=0?'plus':'minus'}">${rs(ss.total-s.total)}</span><small>Sale − cost (commission separate)</small></div></div>
+    ${ss.schedSum!==ss.total?`<p class="warn" style="margin:0">Collection schedule totals ${rs(ss.schedSum)} but the sale is ${rs(ss.total)}.</p>`:''}
+    ${ss.rows.length?`<div class="list sched">${schedRowsHTML(ss.rows,'s',pu.sale.phone,pu.sale.buyer,pu.ref,ss.left,true)}</div>`:''}`}
+  if(!S.canWrite)return `<p class="note" style="margin:0">${T('This land is still with the sub-branch.','یہ زمین ابھی سب برانچ کے پاس ہے')}</p>`;
+  return `<div class="box">${LBL('Where did this land go?','یہ زمین آگے کہاں گئی؟')}<div class="bar" style="justify-content:flex-start"><button class="btn small" data-hoform="${esc(pu.id)}">${BT('Handed to Head Office','ہیڈ آفس کے حوالے')}</button><button class="btn ghost small" data-sellform="${esc(pu.id)}">${BT('Sold directly','براہِ راست فروخت')}</button></div><span class="note">Until one is chosen, the land stays in inventory at cost.</span></div>`;
+}
+function purDetail(pu){
+  const s=purSched(pu,todayStr());
+  return `<header><div>${LBL('Land'+(pu.location?' · '+esc(pu.location):''),'زمین')}<h2>${esc(pu.ref||'Land')}</h2><div class="note">Seller: ${esc(pu.seller)}</div>${contact(pu.phone,pu.seller)}</div>${closeBtn}</header>
+  <div class="stats">
+    <div class="stat">${LBL('Cost','لاگت')}<span class="num">${rs(s.total)}</span><small>${fmtD(pu.date)}</small></div>
+    <div class="stat">${LBL('Still to pay','باقی ادائیگی')}<span class="num">${rs(s.left)}</span><small>Paid ${rs(s.paidSum)}</small></div>
+  </div>
+  ${s.schedSum!==s.total?`<p class="warn" style="margin:0">Schedule totals ${rs(s.schedSum)} but the price is ${rs(s.total)} — use Edit to correct it.</p>`:''}
+  ${pu.note?`<p class="note" style="margin:0">${esc(pu.note)}</p>`:''}
+  <div class="bar">${H2('Payment schedule','ادائیگی کا شیڈول')}${S.canWrite?`<button class="btn ghost small" data-editpur="${esc(pu.id)}">${BT('Edit','ترمیم')}</button>`:''}</div>
+  ${s.rows.length?`<div class="list sched">${schedRowsHTML(s.rows,'b',pu.phone,pu.seller,pu.ref,s.left,false)}</div>`:EMPTY('No schedule yet','ابھی شیڈول نہیں بنا','Use Edit to build it.')}
+  ${dispoHTML(pu,s)}`;
+}
+function recForm(){const s=SET();
+  return `${SHEAD('Receipt','وصولی','Money into cash')}
+  <form id="recForm" class="grid2">
+    ${F('Date','تاریخ',`<input id="r_date" type="date" required value="${todayStr()}">`)}
+    ${F('Amount (Rs)','رقم (روپے)',`<input id="r_amount" type="number" min="1" required inputmode="numeric">`)}
+    ${F('Source','ذریعہ',`<select id="r_purpose"><option value="advance">${T('Head Office — advance / funding','ہیڈ آفس — پیشگی')}</option><option value="land">${T('Head Office — price of land handed over','ہیڈ آفس — زمین کی قیمت')}</option><option value="capA">${T('Capital — '+s.p1en,'سرمایہ — '+s.p1ur)}</option><option value="capZ">${T('Capital — '+s.p2en,'سرمایہ — '+s.p2ur)}</option></select>
+      <span class="note">Advance = Head Office money (all its partners). Land price = the sub-branch’s own income.</span>`,'full')}
+    ${F('Which land (for land price only)','کون سی زمین',`<select id="r_pur"><option value="">—</option>${S.purchases.filter(p=>p.dispo==='ho').map(p=>`<option value="${esc(p.id)}">${esc(p.ref||'Land')} · ${esc(p.seller)}</option>`).join('')}</select>`,'full')}
+    ${F('Cheque / slip / transfer no.','چیک / سلپ نمبر','<input id="r_ref">','full')}
+    ${F('Note','نوٹ','<input id="r_note">','full')}
+    ${saveRow()}
+  </form>`}
+function outForm(){const s=SET();
+  return `${SHEAD('Payment','ادائیگی','Money out of cash')}
+  <form id="outForm" class="grid2">
+    ${F('Type','قسم',`<select id="o_kind"><option value="owner">${T('Partner withdrawal','شراکت دار نے رقم نکالی')}</option><option value="office">${T('Office expense','دفتری خرچ')}</option><option value="other">${T('Other expense','دیگر خرچ')}</option></select>`,'full')}
+    ${F('Which partner','کون سا شراکت دار',`<select id="o_who"><option value="A">${T(s.p1en,s.p1ur)}</option><option value="Z">${T(s.p2en,s.p2ur)}</option><option value="both">${T('Both — by share','دونوں — حصے کے مطابق')}</option></select>`,'full')}
+    ${F('Date','تاریخ',`<input id="o_date" type="date" required value="${todayStr()}">`)}
+    ${F('Amount (Rs)','رقم (روپے)',`<input id="o_amount" type="number" min="1" required inputmode="numeric">`)}
+    ${F('Cheque / voucher no.','چیک / واؤچر نمبر','<input id="o_ref">','full')}
+    ${F('Note','نوٹ','<input id="o_note">','full')}
+    ${saveRow()}
+  </form>`}
+function dealForm(d){
+  const v=d||{agent:'',phone:'',ref:'',date:todayStr(),value:'',pct:'',commission:'',note:''};
+  return `${SHEAD(d?'Edit deal':'New deal',d?'ترمیم':'نیا سودا',d?esc(d.agent):'Commission deal')}
+  <form id="dealForm" class="grid2">
+    ${F('Agent / dealer','ایجنٹ',`<input id="d_agent" required value="${esc(v.agent)}">`,'full')}
+    ${F('WhatsApp number','واٹس ایپ نمبر',`<input id="d_phone" inputmode="tel" placeholder="03xx xxxxxxx" value="${esc(v.phone)}">`)}
+    ${F('Plot / file no.','پلاٹ / فائل نمبر',`<input id="d_ref" value="${esc(v.ref)}">`)}
+    ${F('Deal date','تاریخِ سودا',`<input id="d_date" type="date" required value="${esc(v.date)}">`)}
+    ${F('Deal value (Rs)','سودے کی رقم',`<input id="d_value" type="number" min="0" inputmode="numeric" value="${esc(v.value)}">`)}
+    ${F('Commission %','کمیشن فیصد',`<input id="d_pct" type="number" min="0" step="0.1" value="${esc(v.pct)}">`)}
+    ${F('Commission (Rs)','کمیشن (روپے)',`<input id="d_comm" type="number" min="1" required inputmode="numeric" value="${esc(v.commission)}">`)}
+    <p class="note full" style="margin:0">Enter a % to calculate it, or type a fixed commission directly.</p>
+    ${F('Note','نوٹ',`<input id="d_note" value="${esc(v.note)}">`,'full')}
+    ${saveRow(d?delBtn('deldeal',d.id,'deal:'+d.id,'Delete deal','حذف کریں'):'')}
+  </form>`}
+function dealDetail(d){
+  const p=dealPaid(d),left=num(d.commission)-p;
+  const pays=(d.payments||[]).map((x,i)=>`<div class="row"><div class="main"><div class="t">${fmtD(x.date)}</div><div class="m">${esc(x.mode||'')}${x.ref?' · '+esc(x.ref):''}</div>${d.phone?'<div style="margin-top:4px">'+waLink(d.phone,msgDone(d.agent,(d.ref?d.ref+' — ':'')+'commission',x.amount,x.date,x.ref,left,false),'Send receipt · رسید')+'</div>':''}</div><div class="amt"><div class="num minus">− ${rs(x.amount)}</div></div>${S.canWrite?`<button class="btn ghost small" data-delpay="${i}">${S.confirm==='dpay:'+i?T('Confirm?','یقینی؟'):T('Remove','ہٹائیں')}</button>`:''}</div>`).join('');
+  return `<header><div>${LBL(esc(d.ref||'Commission'),'کمیشن')}<h2>${esc(d.agent)}</h2>${contact(d.phone,d.agent)}</div>${closeBtn}</header>
+  <div class="stats">
+    <div class="stat">${LBL('Commission','کمیشن')}<span class="num">${rs(d.commission)}</span><small>${d.pct?d.pct+'% of '+rs(d.value):d.value?'Deal '+rs(d.value):'Fixed'}</small></div>
+    <div class="stat">${LBL('Remaining','بقایا')}<span class="num">${rs(left)}</span><small>Paid ${rs(p)}</small></div>
+  </div>
+  ${d.note?`<p class="note" style="margin:0">${esc(d.note)}</p>`:''}
+  ${S.canWrite&&left>0?`<form class="payform" id="dpayForm" style="border-radius:12px;border:1px solid var(--line)">${LBL('Pay commission','کمیشن ادا کریں')}
+    <div class="grid2">${F('Date','تاریخ',`<input id="dp_date" type="date" required value="${todayStr()}">`)}${F('Amount','رقم',`<input id="dp_amount" type="number" min="1" required value="${left}">`)}
+    ${F('Method','طریقہ',`<select id="dp_mode">${modeOpts('Cash')}</select>`)}${F('Cheque / receipt no.','چیک / رسید نمبر','<input id="dp_ref">')}</div>
+    <div class="bar" style="justify-content:flex-end"><button class="btn small" type="submit">${BT('Record payment','ادائیگی درج کریں')}</button></div></form>`:''}
+  <div class="bar">${H2('Payments','ادائیگیاں')}${S.canWrite?`<button class="btn ghost small" data-editdeal="${esc(d.id)}">${BT('Edit','ترمیم')}</button>`:''}</div>
+  ${pays?`<div class="list">${pays}</div>`:EMPTY('No payments yet','ابھی کوئی ادائیگی نہیں')}`;
+}
+
+/* ---------- examples (in-memory, never saved) ---------- */
+function memDb(seed){
+  const store={};Object.keys(seed).forEach(c=>{store[c]={};seed[c].forEach(x=>{const r=clean(x);const id=r.id;delete r.id;store[c][id]=r})});
+  let subs=[],n=0;const fire=()=>setTimeout(()=>subs.slice().forEach(s=>s.f()),0);
+  const add=f=>{const s={f};subs.push(s);setTimeout(f,0);return()=>{subs=subs.filter(x=>x!==s)}};
+  const docRef=(c,id)=>({id,set:async b=>{(store[c]=store[c]||{})[id]=clean(b);fire()},update:async b=>{store[c][id]=Object.assign(store[c][id]||{},clean(b));fire()},delete:async()=>{if(store[c])delete store[c][id];fire()},
+    onSnapshot:f=>add(()=>f({id,exists:!!(store[c]&&store[c][id]),data:()=>store[c]&&store[c][id]&&clean(store[c][id])}))});
+  return {collection:c=>({doc:id=>docRef(c,id||('ex'+(++n)+Date.now().toString(36))),onSnapshot:f=>add(()=>f({docs:Object.entries(store[c]||{}).map(([id,d])=>({id,exists:true,data:()=>clean(d)}))}))}),
+    doc:p=>{const [c,id]=p.split('/');return docRef(c,id)}};
+}
+function demoSeed(){const t=todayStr();const M=k=>addMonths(t,k);const s=SET();
+  const op={};for(let i=1;i<=6;i++)op[i]={date:addMonths(M(-8),i),amount:62500,mode:'Opening record',ref:''};op[7]={date:M(-1),amount:62500,mode:'Cheque',ref:'CHQ 220781'};
+  return {
+  settings:[{id:'profile',soc:'Demo Housing Society',socUr:'ڈیمو ہاؤسنگ سوسائٹی',branch:s.branch,branchUr:s.branchUr,addr:'Example data — your real details go in Settings',phone:'',p1en:s.p1en,p1ur:s.p1ur,p1:s.p1,p2en:s.p2en,p2ur:s.p2ur,p2:s.p2}],
+  investors:[
+    {id:'ex-inv1',name:'Ahmed Raza',phone:'03000000001',ref:'File A-101',amount:1200000,start:M(-4),pct:25,months:12,plan:'monthly',cashIn:true,note:'Example 1: Rs 12 lakh for 12 months at 25% — Rs 15 lakh comes back in 12 monthly returns of Rs 1.25 lakh. Two are paid, the third is late and the fourth is due this month.',
+      paid:{1:{date:M(-3),amount:125000,mode:'Cheque',ref:'CHQ 104512'},2:{date:M(-2),amount:125000,mode:'Bank transfer',ref:'IBFT 778120'}}},
+    {id:'ex-inv2',name:'Bushra Naveed',phone:'03000000002',ref:'File A-102',amount:500000,start:M(-3),pct:25,months:12,plan:'end',cashIn:true,note:'Example 2: lump-sum investor — Rs 5 lakh now, Rs 6.25 lakh paid back in one go at the end of 12 months.',paid:{}},
+    {id:'ex-inv3',name:'Haji Nawaz',phone:'03000000003',ref:'File A-087',amount:600000,start:M(-8),pct:25,months:12,plan:'monthly',cashIn:false,note:'Example 3: an old investor who was already running before this ledger. His money came in earlier and was spent, so it is an opening record; the first 6 returns were marked paid as opening records and the 7th was paid by cheque here.',paid:op}],
+  purchases:[
+    {id:'ex-land1',seller:'Rana Akram',phone:'03000000004',ref:'Khasra 245',location:'Mauza Example',date:M(-5),total:4000000,note:'Example 4: land bought on installments and handed to Head Office for development.',
+      schedule:[{label:'Down payment',due:M(-5),amount:1500000,paid:{date:M(-5),amount:1500000,mode:'Cash',ref:''}},{label:'Installment 1',due:M(-2),amount:1250000,paid:{date:M(-2),amount:1250000,mode:'Cheque',ref:'CHQ 330145'}},{label:'Installment 2',due:M(1),amount:1250000,paid:null}],
+      dispo:'ho',ho:{date:M(-1),value:5500000,note:'Head Office develops it and pays the sub-branch as plots sell. Rs 20 lakh has come so far.'}},
+    {id:'ex-land2',seller:'Malik Shafiq',phone:'03000000005',ref:'Plot 7, Block C',location:'Mauza Example',date:M(-6),total:1800000,note:'Example 5: land bought outright and later sold directly by the sub-branch, without development.',
+      schedule:[{label:'Down payment',due:M(-6),amount:1800000,paid:{date:M(-6),amount:1800000,mode:'Cash',ref:''}}],
+      dispo:'sold',sale:{buyer:'Zahid Mehmood',phone:'03000000006',date:M(-2),total:2400000,note:'',schedule:[{label:'Down payment',due:M(-2),amount:1000000,paid:{date:M(-2),amount:1000000,mode:'Cash',ref:''}},{label:'Installment 1',due:M(-1),amount:700000,paid:null},{label:'Installment 2',due:M(2),amount:700000,paid:null}]}},
+    {id:'ex-land3',seller:'Ch. Iqbal',phone:'03000000007',ref:'Khasra 310',location:'Mauza Example',date:M(-1),total:900000,note:'Example 6: land still with the sub-branch — down payment paid, the rest every 3 months.',
+      schedule:[{label:'Down payment',due:M(-1),amount:300000,paid:{date:M(-1),amount:300000,mode:'Cash',ref:''}},{label:'Installment 1',due:t,amount:200000,paid:null},{label:'Installment 2',due:M(3),amount:200000,paid:null},{label:'Installment 3',due:M(6),amount:200000,paid:null}]}],
+  deals:[
+    {id:'ex-deal1',agent:'Imran (agent)',phone:'03000000008',ref:'Khasra 245',date:M(-5),value:4000000,pct:1,commission:40000,note:'Example 7: 1% commission on a Rs 40 lakh deal, part paid.',payments:[{date:M(-4),amount:25000,mode:'Cash',ref:'Receipt 12'}]},
+    {id:'ex-deal2',agent:'Saleem (agent)',phone:'03000000009',ref:'Plot 7, Block C',date:M(-2),value:0,pct:0,commission:30000,note:'Example 7b: fixed commission, not paid yet.',payments:[]}],
+  receipts:[
+    {id:'ex-r1',date:M(-6),amount:6000000,purpose:'advance',purId:'',ref:'HO cheque 5521',note:'Example 8: advance from Head Office to buy land'},
+    {id:'ex-r2',date:t,amount:2000000,purpose:'land',purId:'ex-land1',ref:'HO cheque 5790',note:'Head Office paying for Khasra 245'},
+    {id:'ex-r3',date:M(-6),amount:500000,purpose:'capA',purId:'',ref:'',note:'Partner’s own money put in'}],
+  outflows:[
+    {id:'ex-o1',kind:'owner',who:'A',date:M(-3),amount:300000,ref:'V-01',note:'Example 9: partners taking money out'},
+    {id:'ex-o2',kind:'owner',who:'Z',date:M(-2),amount:150000,ref:'V-02',note:''},
+    {id:'ex-o3',kind:'owner',who:'both',date:M(-1),amount:100000,ref:'V-03',note:'Split by share'},
+    {id:'ex-o4',kind:'office',who:'',date:M(-1),amount:45000,ref:'V-04',note:'Office rent'}]};
+}
+const GUIDE=[
+  ['open','ex-inv1','New investor, monthly returns','نیا سرمایہ کار — ماہانہ واپسی','Rs 12 lakh at 25% for 12 months. See paid, late and due-this-month returns, tap Pay on the late one, then Send receipt.','12 لاکھ، 25٪، 12 ماہ — ادا شدہ، تاخیر والی اور اس ماہ کی قسط'],
+  ['open','ex-inv2','Lump-sum investor','یکمشت واپسی والا سرمایہ کار','One payment of Rs 6.25 lakh at the end of the term.','مدت کے آخر میں ایک ہی ادائیگی'],
+  ['open','ex-inv3','Old investor (opening record)','پرانا سرمایہ کار','Money came before this ledger. Shows how old records are entered and where they appear in the Balance Sheet.','پرانا حساب کیسے درج ہوتا ہے'],
+  ['pur','ex-land1','Land handed to Head Office','ہیڈ آفس کے حوالے زمین','Bought on installments, handed to HO at an agreed Rs 55 lakh; HO has paid Rs 20 lakh so far. Gain shown on the land.','قسطوں پر خریدی، ہیڈ آفس کو دی، رقم آ رہی ہے'],
+  ['pur','ex-land2','Land sold directly','براہِ راست فروخت','Sold without development for Rs 24 lakh. One buyer installment is late — open it and try the Reminder button.','بغیر ڈیولپمنٹ فروخت — خریدار کی قسط تاخیر میں'],
+  ['pur','ex-land3','Land still in hand','زمین ابھی پاس ہے','Down payment paid, the rest every 3 months. Choose where it goes when it is sold or handed over.','بیعانہ ادا، باقی ہر 3 ماہ'],
+  ['deal','ex-deal1','Agent commission','ایجنٹ کا کمیشن','1% of a Rs 40 lakh deal, part paid. A second agent has a fixed commission still unpaid.','1٪ کمیشن، جزوی ادا'],
+  ['go','ho','Cash: money in and out','نقدی: وصولی اور نکاسی','Head Office advance, land price from HO, money a partner put in, money each partner took out, and office rent.','ہیڈ آفس، شراکت دار، نکاسی اور خرچ'],
+  ['go','rep','Reports','رپورٹس','Trial Balance, Profit & Loss, Balance Sheet, Cash Book, ledgers, journal and partners — all built from the examples above.','تمام رپورٹس انہی مثالوں سے']];
+function guideHTML(){return `<div class="bar">${H2('How each part works','ہر حصہ کیسے کام کرتا ہے')}</div>
+  <div class="guide">${GUIDE.map((g,i)=>`<div class="gcard"><span class="gn">EXAMPLE ${i+1}</span><div class="gt">${g[2]}${U(g[3])}</div><p>${g[4]}</p><p class="ur" lang="ur" dir="rtl">${g[5]}</p><button class="btn ghost small" data-${g[0]==='go'?'go':g[0]}="${g[1]}">${BT('Open','کھولیں')}</button></div>`).join('')}</div>`}
+let UNSUB=[];
+function attach(db){UNSUB.forEach(u=>{try{u()}catch(_){}});UNSUB=[];S.loaded={inv:0,rec:0,out:0,deal:0,pur:0,set:0};
+  const fail=()=>toast(T('Records did not load — reopen the page','ریکارڈ لوڈ نہیں ہوا'));
+  const sub=(col,key,arr)=>UNSUB.push(db.collection(col).onSnapshot(s=>{S[arr]=s.docs.map(d=>({id:d.id,...d.data()}));S.loaded[key]=1;render()},fail));
+  sub('investors','inv','investors');sub('receipts','rec','receipts');sub('outflows','out','outs');sub('deals','deal','deals');sub('purchases','pur','purchases');
+  UNSUB.push(db.doc('settings/profile').onSnapshot(s=>{S.set=s.exists?(s.data()||{}):{};S.loaded.set=1;render()},fail));
+}
+function toggleDemo(){
+  S.open=null;S.pf=null;S.payFor=null;S.confirm=null;renderSheet();
+  if(!S.demo){S.real={db:S.db,canWrite:S.canWrite,set:S.set};S.demo=true;S.db=memDb(demoSeed());S.canWrite=true;S.tab='home';attach(S.db);render();window.scrollTo(0,0);toast(T('Examples loaded — nothing is saved','مثالیں کھل گئیں'))}
+  else{S.demo=false;S.db=S.real.db;S.canWrite=S.real.canWrite;S.set=S.real.set;
+    ['investors','receipts','outs','deals','purchases'].forEach(k=>S[k]=[]);
+    if(S.db)attach(S.db);else S.loaded={inv:1,rec:1,out:1,deal:1,pur:1,set:1};render();window.scrollTo(0,0);toast(T('Back to your real ledger','اصل کھاتے پر واپس'))}
+}
+
+/* ---------- writes ---------- */
+async function safe(fn,ok){
+  try{await fn();if(ok)toast(ok)}
+  catch(e){const c=e&&e.code;
+    if(c==='invalid_argument'){S.canWrite=false;toast(T('You can view this ledger but not edit it','آپ صرف دیکھ سکتے ہیں'));render()}
+    else if(c==='quota_exceeded')toast(T('Storage is full — remove old entries','جگہ بھر گئی ہے'));
+    else toast(T('Not saved — please try again','محفوظ نہیں ہوا، دوبارہ کوشش کریں'))}
+}
+async function saveCSV(name,rows){const dl=await window.claude?.use?.('downloads');if(!dl){toast(T('Download is not available here','یہاں ڈاؤن لوڈ دستیاب نہیں'));return}
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  try{await dl.save({filename:name+'-'+todayStr()+'.csv',data:'﻿'+rows.map(r=>r.map(q).join(',')).join('\n')})}catch(e){if(e&&e.code!=='declined')toast(T('File not saved','فائل محفوظ نہیں ہوئی'))}}
+
+/* ---------- events ---------- */
+$('tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(!b)return;S.tab=b.dataset.tab;S.confirm=null;try{localStorage.setItem('ik_tab',S.tab)}catch(_){}render()});
+function liveSearch(e,key,id){S[key]=e.target.value;const pos=e.target.selectionStart;render();const s=$(id);if(s){s.focus();s.setSelectionRange(pos,pos)}}
+document.addEventListener('input',e=>{
+  const id=e.target.id;
+  if(id==='search')liveSearch(e,'q','search');
+  if(id==='dsearch')liveSearch(e,'dq','dsearch');
+  if(id==='psearch')liveSearch(e,'pq','psearch');
+  if(e.target.closest('#invForm'))updPrev();
+  if(id==='d_value'||id==='d_pct'){const v=Number($('d_value').value)||0,p=Number($('d_pct').value)||0;if(v&&p)$('d_comm').value=Math.round(v*p/100)}
+  if(id&&id.startsWith('sr_a')){syncPF();const pos=e.target.value.length;renderSheet();const n=$(id);if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(_){}}}
+});
+document.addEventListener('change',e=>{const id=e.target.id;
+  if(id==='rep_from'){S.rep.from=e.target.value;render()}
+  if(id==='rep_to'){S.rep.to=e.target.value;render()}
+  if(id==='rep_acc'){S.rep.acc=e.target.value;S.rep.party='';render()}
+  if(id==='rep_party'){S.rep.party=e.target.value;render()}
+});
+function curItem(){const o=S.open;return ({detail:S.investors,purchase:S.purchases,deal:S.deals}[o.type]||[]).find(x=>x.id===o.id)}
+document.addEventListener('click',async e=>{
+  const t=e.target;
+  if(t.dataset&&t.dataset.close&&(t.classList.contains('sheet-bg')||t.classList.contains('x'))){S.open=null;S.payFor=null;S.confirm=null;S.pf=null;renderSheet();return}
+  const el=t.closest('[data-go],[data-act],[data-rep],[data-hoform],[data-sellform],[data-undispo],[data-open],[data-pur],[data-edit],[data-editpur],[data-pay],[data-unpay],[data-cancelpay],[data-delinv],[data-delpur],[data-del],[data-deal],[data-editdeal],[data-deldeal],[data-delpay],[data-gen],[data-addrow],[data-rmrow]');if(!el)return;
+  const d=el.dataset;
+  if(d.act==='demo'){toggleDemo();return}
+  if(d.act==='logout'){if(window.HF_LOGOUT)window.HF_LOGOUT();return}
+  if(d.act==='wademo'){toast(T('WhatsApp is switched off in examples — the numbers are not real','مثالوں میں واٹس ایپ بند ہے'));return}
+  if(d.go){S.tab=d.go;render();window.scrollTo(0,0);return}
+  if(d.rep){S.rep.kind=d.rep;try{localStorage.setItem('ik_rep',d.rep)}catch(_){}render();return}
+  if(d.act==='csvRep'){const r=S.lastRep;if(r)await saveCSV(r.t[0].toLowerCase().replace(/[^a-z0-9]+/g,'-'),r.csv);return}
+  if(d.act==='csvAll'){await exportAll();return}
+  if(d.act==='settings'){S.open={type:'set'};renderSheet();return}
+  if(d.open){S.open={type:'detail',id:d.open};S.payFor=null;S.confirm=null;renderSheet()}
+  else if(d.pur){S.open={type:'purchase',id:d.pur};S.payFor=null;S.confirm=null;renderSheet()}
+  else if(d.deal){S.open={type:'deal',id:d.deal};S.confirm=null;renderSheet()}
+  else if(d.act==='newInv'){S.open={type:'inv'};renderSheet();updPrev();$('f_name').focus()}
+  else if(d.act==='newPur'){S.pf=newPF(null);S.open={type:'pform'};renderSheet();$('u_seller').focus()}
+  else if(d.act==='newDeal'){S.open={type:'dealform'};renderSheet();$('d_agent').focus()}
+  else if(d.act==='newRec'){S.open={type:'rec'};renderSheet();$('r_amount').focus()}
+  else if(d.act==='newOut'){S.open={type:'out'};renderSheet();$('o_amount').focus()}
+  else if(d.edit){S.open={type:'inv',id:d.edit};S.confirm=null;renderSheet();updPrev()}
+  else if(d.editpur){S.pf=newPF(S.purchases.find(x=>x.id===d.editpur));S.open={type:'pform'};S.confirm=null;renderSheet()}
+  else if(d.editdeal){S.open={type:'dealform',id:d.editdeal};S.confirm=null;renderSheet()}
+  else if(d.hoform){S.open={type:'hoform',id:d.hoform};S.confirm=null;renderSheet()}
+  else if(d.sellform){S.pf=newSF(S.purchases.find(x=>x.id===d.sellform));S.open={type:'pform'};S.confirm=null;renderSheet()}
+  else if(d.undispo){const key='undispo:'+d.undispo;if(S.confirm!==key){S.confirm=key;renderSheet();return}
+    S.confirm=null;const pu=S.purchases.find(x=>x.id===d.undispo);const body=clean(pu);delete body.id;body.dispo='';delete body.sale;delete body.ho;
+    await safe(()=>S.db.doc('purchases/'+pu.id).set(body),T('Removed','ہٹا دیا گیا'))}
+  else if(d.gen){syncPF();if(!(Number(S.pf.total)>0)){toast(T('Enter the price first','پہلے قیمت درج کریں'));return}genRows();renderSheet()}
+  else if(d.addrow){syncPF();const last=S.pf.rows[S.pf.rows.length-1];S.pf.rows.push({label:'Installment '+(S.pf.rows.filter(r=>/^(Installment|Qist)/.test(r.label||'')).length+1),due:last?addMonths(last.due,1):S.pf.date,amount:0,paid:null});renderSheet()}
+  else if(d.rmrow!=null){syncPF();S.pf.rows.splice(Number(d.rmrow),1);renderSheet()}
+  else if(d.pay!=null){S.payFor=d.pay;S.confirm=null;renderSheet()}
+  else if(d.cancelpay){S.payFor=null;renderSheet()}
+  else if(d.unpay!=null){const key='pay:'+d.unpay;if(S.confirm!==key){S.confirm=key;renderSheet();return}
+    S.confirm=null;const item=curItem();const body=clean(item);delete body.id;const k=d.unpay[0],n=Number(d.unpay.slice(1));
+    if(k==='i'){if(body.paid)delete body.paid[n];await safe(()=>S.db.doc('investors/'+item.id).set(body),T('Undone','واپس لے لیا'))}
+    else{if(k==='s')body.sale.schedule[n].paid=null;else body.schedule[n].paid=null;await safe(()=>S.db.doc('purchases/'+item.id).set(body),T('Undone','واپس لے لیا'))}}
+  else if(d.delinv){const key='inv:'+d.delinv;if(S.confirm!==key){S.confirm=key;renderSheet();return}
+    S.confirm=null;S.open=null;renderSheet();await safe(()=>S.db.doc('investors/'+d.delinv).delete(),T('Investor deleted','حذف ہو گیا'))}
+  else if(d.delpur){const key='pur:'+d.delpur;if(S.confirm!==key){syncPF();S.confirm=key;renderSheet();return}
+    S.confirm=null;S.open=null;S.pf=null;renderSheet();await safe(()=>S.db.doc('purchases/'+d.delpur).delete(),T('Deal deleted','حذف ہو گیا'))}
+  else if(d.deldeal){const key='deal:'+d.deldeal;if(S.confirm!==key){S.confirm=key;renderSheet();return}
+    S.confirm=null;S.open=null;renderSheet();await safe(()=>S.db.doc('deals/'+d.deldeal).delete(),T('Deal deleted','حذف ہو گیا'))}
+  else if(d.delpay!=null){const key='dpay:'+d.delpay;if(S.confirm!==key){S.confirm=key;renderSheet();return}
+    S.confirm=null;const dd=curItem();const body=clean(dd);delete body.id;body.payments.splice(Number(d.delpay),1);
+    await safe(()=>S.db.doc('deals/'+dd.id).set(body),T('Payment removed','ادائیگی ہٹا دی'))}
+  else if(d.del){const key=d.del;if(S.confirm!==key){S.confirm=key;render();return}
+    S.confirm=null;const [k,id]=key.split(':');await safe(()=>S.db.doc((k==='rec'?'receipts/':'outflows/')+id).delete(),T('Entry deleted','اندراج حذف ہو گیا'))}
+});
+document.addEventListener('submit',async e=>{
+  e.preventDefault();const f=e.target;const g=id=>($(id)?.value||'').trim();
+  if(f.id==='setForm'){
+    const body={soc:g('s_soc'),socUr:g('s_socUr'),branch:g('s_branch')||DEF.branch,branchUr:g('s_branchUr')||DEF.branchUr,addr:g('s_addr'),phone:g('s_phone'),
+      p1en:g('s_p1en')||DEF.p1en,p1ur:g('s_p1ur')||DEF.p1ur,p1:Number(g('s_p1'))||0,p2en:g('s_p2en')||DEF.p2en,p2ur:g('s_p2ur')||DEF.p2ur,p2:Number(g('s_p2'))||0};
+    if(body.p1+body.p2!==100){toast(T('Partner shares must add up to 100','حصوں کا میزان 100 ہونا چاہیے'));return}
+    S.open=null;renderSheet();await safe(()=>S.db.doc('settings/profile').set(body),T('Settings saved','ترتیبات محفوظ'));
+  } else if(f.id==='invForm'){
+    const editing=S.open.id?S.investors.find(i=>i.id===S.open.id):null;
+    const body={name:g('f_name'),phone:g('f_phone'),ref:g('f_ref'),amount:Number(g('f_amount')),start:g('f_start'),pct:Number(g('f_pct')),months:Number(g('f_months')),plan:g('f_plan'),note:g('f_note'),cashIn:g('f_cashin')==='1',paid:editing&&editing.paid?clean(editing.paid):{},createdAt:editing?.createdAt||new Date().toISOString()};
+    if(!editing){const k=Math.max(0,Number(g('f_prepaid'))||0);if(k)schedule(body,todayStr()).rows.slice(0,k).forEach(r=>{body.paid[r.i]={date:r.due,amount:r.amt,mode:'Opening record',ref:''}})}
+    const ref=editing?S.db.doc('investors/'+editing.id):S.db.collection('investors').doc();
+    S.open={type:'detail',id:ref.id};await safe(()=>ref.set(body),T('Investor saved','سرمایہ کار محفوظ'));renderSheet();
+  } else if(f.id==='purForm'){
+    syncPF();const p=S.pf;if(!p.rows.length&&Number(p.total)>0)genRows();
+    const sched=p.rows.map(r=>({label:r.label||'Installment',due:r.due||p.date,amount:Number(r.amount)||0,paid:r.paid||null}));
+    if(p.mode==='sell'){const pu=S.purchases.find(x=>x.id===p.purId);const body=clean(pu);delete body.id;body.dispo='sold';delete body.ho;
+      body.sale={buyer:p.seller.trim(),phone:p.phone.trim(),date:p.date,total:Number(p.total)||0,note:p.note.trim(),schedule:sched};
+      S.open={type:'purchase',id:pu.id};S.pf=null;await safe(()=>S.db.doc('purchases/'+pu.id).set(body),T('Sale recorded','فروخت درج'));renderSheet();return}
+    const prev=p.id?S.purchases.find(x=>x.id===p.id):null;
+    const body={...(prev?clean(prev):{}),seller:p.seller.trim(),phone:p.phone.trim(),ref:p.ref.trim(),location:p.location.trim(),date:p.date,total:Number(p.total)||0,note:p.note.trim(),schedule:sched,createdAt:p.createdAt||new Date().toISOString()};delete body.id;
+    const ref=p.id?S.db.doc('purchases/'+p.id):S.db.collection('purchases').doc();
+    S.open={type:'purchase',id:ref.id};S.pf=null;await safe(()=>ref.set(body),T('Purchase saved','خریداری محفوظ'));renderSheet();
+  } else if(f.id==='hoForm'){
+    const pu=S.purchases.find(x=>x.id===S.open.id);const body=clean(pu);delete body.id;body.dispo='ho';delete body.sale;body.ho={date:g('h_date'),value:Number(g('h_value'))||0,note:g('h_note')};
+    S.open={type:'purchase',id:pu.id};await safe(()=>S.db.doc('purchases/'+pu.id).set(body),T('Handover recorded','حوالگی درج'));renderSheet();
+  } else if(f.id==='dealForm'){
+    const editing=S.open.id?S.deals.find(x=>x.id===S.open.id):null;
+    const body={agent:g('d_agent'),phone:g('d_phone'),ref:g('d_ref'),date:g('d_date'),value:Number(g('d_value'))||0,pct:Number(g('d_pct'))||0,commission:Number(g('d_comm')),note:g('d_note'),payments:editing?clean(editing.payments||[]):[],createdAt:editing?.createdAt||new Date().toISOString()};
+    const ref=editing?S.db.doc('deals/'+editing.id):S.db.collection('deals').doc();
+    S.open={type:'deal',id:ref.id};await safe(()=>ref.set(body),T('Deal saved','سودا محفوظ'));renderSheet();
+  } else if(f.id==='dpayForm'){
+    const dd=curItem();const body=clean(dd);delete body.id;body.payments=body.payments||[];
+    body.payments.push({date:g('dp_date'),amount:Number(g('dp_amount')),mode:g('dp_mode'),ref:g('dp_ref'),at:new Date().toISOString()});
+    document.activeElement?.blur?.();await safe(()=>S.db.doc('deals/'+dd.id).set(body),T('Commission paid','کمیشن ادا'));renderSheet();
+  } else if(f.id==='recForm'){
+    const purpose=g('r_purpose');const purId=purpose==='land'?g('r_pur'):'';
+    if(purpose==='land'&&!purId){toast(T('Pick which land this payment is for','زمین منتخب کریں'));return}
+    const body={date:g('r_date'),amount:Number(g('r_amount')),purpose,purId,ref:g('r_ref'),note:g('r_note'),createdAt:new Date().toISOString()};
+    S.open=null;renderSheet();await safe(()=>S.db.collection('receipts').doc().set(body),T('Receipt recorded','وصولی درج'));
+  } else if(f.id==='outForm'){
+    const kind=g('o_kind');const body={kind,who:kind==='owner'?g('o_who'):'',date:g('o_date'),amount:Number(g('o_amount')),ref:g('o_ref'),note:g('o_note'),createdAt:new Date().toISOString()};
+    S.open=null;renderSheet();await safe(()=>S.db.collection('outflows').doc().set(body),T('Payment recorded','ادائیگی درج'));
+  } else if(f.dataset.payform!=null){
+    const key=f.dataset.payform;const item=curItem();const body=clean(item);delete body.id;const k=key[0],n=Number(key.slice(1));
+    const pay={date:g('p_date'),amount:Number(g('p_amount')),mode:g('p_mode'),ref:g('p_ref')};
+    S.payFor=null;document.activeElement?.blur?.();
+    if(k==='i'){body.paid=body.paid||{};body.paid[n]=pay;await safe(()=>S.db.doc('investors/'+item.id).set(body),T('Payment recorded','ادائیگی درج'))}
+    else{if(k==='s')body.sale.schedule[n].paid=pay;else body.schedule[n].paid=pay;await safe(()=>S.db.doc('purchases/'+item.id).set(body),k==='s'?T('Receipt recorded','وصولی درج'):T('Payment recorded','ادائیگی درج'))}
+    renderSheet();
+  }
+});
+async function exportAll(){const L=[];const today=todayStr();
+  L.push(['INVESTORS']);L.push(['Investor','WhatsApp','File no','Investment','Start','Inst','Due','Amount','Status','Paid date','Paid','Mode','Ref']);
+  S.investors.forEach(inv=>schedule(inv,today).rows.forEach(r=>L.push([inv.name,inv.phone,inv.ref,inv.amount,inv.start,r.i,r.due,r.amt,r.st,r.p?.date,r.p?.amount,r.p?.mode,r.p?.ref])));
+  L.push([]);L.push(['LAND']);L.push(['Plot','Seller','WhatsApp','Location','Cost','Item','Due','Amount','Status','Paid date','Paid','Disposal','Buyer / HO','Agreed / sale']);
+  S.purchases.forEach(pu=>{const disp=pu.dispo==='ho'?'Head Office':pu.dispo==='sold'?'Sold':'In hand';const who=pu.dispo==='ho'?'Head Office':pu.sale?.buyer||'';const val=pu.dispo==='ho'?pu.ho?.value:pu.sale?.total||'';
+    purSched(pu,today).rows.forEach(r=>L.push([pu.ref,pu.seller,pu.phone,pu.location,pu.total,r.label,r.due,r.amt,r.st,r.p?.date,r.p?.amount,disp,who,val]))});
+  L.push([]);L.push(['COMMISSION']);L.push(['Date','Agent','WhatsApp','Plot','Deal value','Commission','Paid','Remaining']);
+  S.deals.forEach(d=>{const p=dealPaid(d);L.push([d.date,d.agent,d.phone,d.ref,d.value,d.commission,p,num(d.commission)-p])});
+  L.push([]);L.push(['JOURNAL']);L.push(['Date','JV','Account','Name','Party','Debit','Credit','Narration']);
+  S.J.forEach(e=>e.lines.forEach(l=>L.push([e.date,e.no,l.a,S.ACC[l.a][0],l.p||'',l.dr||'',l.cr||'',e.narr])));
+  await saveCSV('investor-khata-all',L);
+}
+
+/* ---------- boot ---------- */
+render();
+(async()=>{
+  const all={inv:1,rec:1,out:1,deal:1,pur:1,set:1};
+  if(!(window.claude&&window.claude.use)){S.loaded=all;render();return}
+  const db=await window.claude.use('db');
+  if(!db){S.loaded=all;render();return}
+  try{const u=await window.claude.use('user');if(u){const c=await u.can('data.write');if(c===false){S.canWrite=false;const b=$('banner');b.textContent=T('View only — entries are made by the accounts office.','صرف دیکھنے کی اجازت');b.hidden=false}}}catch(_){}
+  if(S.demo){S.real={db,canWrite:S.canWrite,set:{}};return}
+  S.db=db;attach(db);
+})();
+})();
+</script>
+</body></html>
