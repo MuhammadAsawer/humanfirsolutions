@@ -73,6 +73,7 @@ h3{margin:4px 0 8px;font-size:15px}
       <i>"Ali bhai ko 1 chicken karahi aur 4 naan udhaar"</i> · <i>"Madina poultry se 10 kilo chicken 7500 ka liya"</i> · <i>"bijli ka bill 12000 diya"</i></div>
     <div class="row" style="margin-bottom:8px">
       <button class="btn ghost" id="autoBtn">▶ Khud chalao (auto demo)</button>
+      <button class="btn" id="closeBtn">Din band karo</button>
     </div>
     <div id="chat"></div>
   </section>
@@ -145,7 +146,7 @@ function fresh(){ return {entries:[{id:'OPEN', at:Date.now(), type:'opening', pa
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 function getSet(k,d){ try{ return localStorage.getItem(k) || d; }catch(e){ return d; } }
 function setSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-const APP_VER = 'TAJ-2026-11-01-e';
+const APP_VER = 'TAJ-2026-11-01-f';
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const rs = n => 'Rs ' + (Math.round(n) || 0).toLocaleString('en-PK');
 const now = () => new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -187,6 +188,7 @@ Qismein (type):
 - "expense": kharcha (bijli, gas, tankhwah waghera). head upar wale khaaton mein se.
 - "receipt": grahak ne purana udhaar wapas diya.
 - "payment": supplier ko purani raqam di.
+- "closing": malik din band karna chahta hai ya poochta hai sab theek hai ya nahi ("din band karo", "closing", "hisaab dikhao"). amount = galle mein gina hua naqd agar bataya, warna null.
 - "unknown": samajh na aaye.
 
 Udhaar ka usool: "udhaar", "baad mein dega", "khaate mein" ho to credit=true. Warna naqd: credit=false.
@@ -197,7 +199,7 @@ confidence 0 se 1.
 explain: malik ke liye ek chhota jumla, Roman Urdu mein, ke tum ne kya samjha.
 
 SIRF yeh JSON lautao:
-{"type":"sale|purchase|expense|receipt|payment|unknown","party":string|null,"items":[{"name":string,"qty":number,"unit":string|null,"rate":number|null}],"amount":number|null,"credit":boolean,"paid":number|null,"head":string|null,"note":string|null,"explain":string,"questions":[string],"confidence":number}`;
+{"type":"sale|purchase|expense|receipt|payment|closing|unknown","party":string|null,"items":[{"name":string,"qty":number,"unit":string|null,"rate":number|null}],"amount":number|null,"credit":boolean,"paid":number|null,"head":string|null,"note":string|null,"explain":string,"questions":[string],"confidence":number}`;
 }
 async function askAgent(text){
   const key = getSet('hf_gemini_key','');
@@ -332,6 +334,7 @@ async function handle(text, auto){
   try{ p = await askAgent(text); }
   catch(err){ wait.innerHTML = '<span class="tag t-bad">Masla</span> ' + esc(err.message); return null; }
   wait.remove();
+  if(p.type === 'closing'){ doClosing(p.amount != null ? Number(p.amount) : null); return null; }
   if(p.type === 'unknown' || (p.questions && p.questions.length && !p.amount && !(p.items||[]).length)){
     addMsg(esc(p.explain || '') + (p.questions && p.questions.length ? '\n' + esc(p.questions.join('\n')) : ''), 'bot');
     return null;
@@ -394,6 +397,47 @@ function runChecks(why){
 }
 function wlog(t){ S.wlog.unshift(now() + ' · ' + t); S.wlog = S.wlog.slice(0, 80); save(); }
 setInterval(() => runChecks('har 30 second'), 30000);
+
+/* ===== Din band (closing) — Gemini ki zaroorat nahi, sab hisaab app khud karti hai ===== */
+function doClosing(counted){
+  runChecks('din band');
+  const start = new Date(); start.setHours(0,0,0,0);
+  const today = S.entries.filter(e => live(e) && e.at >= start.getTime());
+  const sum = (t, acc, side) => today.filter(e => e.type === t).reduce((a,e) => a + e.lines.filter(l => l.acc === acc).reduce((b,l) => b + (l[side]||0), 0), 0);
+  const tot = t => today.filter(e => e.type === t).reduce((a,e) => a + e.amount, 0);
+  const sale = tot('sale'), saleCash = sum('sale',1000,'dr'), saleCredit = sum('sale',1100,'dr');
+  const pur = tot('purchase'), purCash = sum('purchase',1000,'cr'), purCredit = sum('purchase',2000,'cr');
+  const exp = tot('expense'), rec = tot('receipt'), pay = tot('payment');
+  const heads = {}; today.filter(e => e.type === 'expense').forEach(e => heads[e.party] = (heads[e.party]||0) + e.amount);
+  const book = accBal(1000);
+  const rows = [
+    ['Sale', rs(sale)], ['  · naqd', rs(saleCash)], ['  · udhaar', rs(saleCredit)],
+    ['Kharid', rs(pur)], ['  · naqd', rs(purCash)], ['  · udhaar', rs(purCredit)],
+    ['Kharche', rs(exp)], ...Object.entries(heads).map(([h,v]) => ['  · ' + h, rs(v)]),
+    ['Wasooli (grahak se)', rs(rec)], ['Adaigi (supplier ko)', rs(pay)],
+    ['Munafa (andaza)', rs(sale - pur - exp)],
+    ['Khaate ke mutabiq galle mein', rs(book)]
+  ];
+  let h = '<b>Din band · ' + new Date().toLocaleDateString('en-PK') + '</b><table>' + rows.map(r => `<tr><td>${esc(r[0])}</td><td>${r[1]}</td></tr>`).join('') + '</table>';
+  const issues = [];
+  if(counted != null && !isNaN(counted)){
+    const farq = counted - book;
+    h += `<div>Aap ne gina: <b>${rs(counted)}</b></div>`;
+    if(Math.abs(farq) < 1) h += '<div><span class="tag t-ok">Theek</span> Galla khaate se bilkul milta hai.</div>';
+    else { issues.push('galla'); h += `<div><span class="tag t-bad">Farq</span> Galle mein ${rs(Math.abs(farq))} ${farq < 0 ? 'KAM' : 'ZYADA'} hai. ${farq < 0 ? 'Koi kharcha/adaigi likhna reh gaya, ya sale zyada likhi gayi.' : 'Koi sale/wasooli likhna reh gayi, ya kharcha zyada likha gaya.'}</div>`; }
+  } else h += '<div><span class="tag t-warn">Dhyan</span> Galle ka naqd gin kar batayein, tab hi pakka milan hoga.</div>';
+  for(const [lv, t] of lastChecks) if(lv !== 'ok'){ issues.push(t); h += `<div><span class="tag t-${lv}">${lv==='warn'?'Dhyan':'Ghalti'}</span> ${esc(t)}</div>`; }
+  h += issues.length ? `<div style="margin-top:6px"><b>Nateeja: ${issues.length} ${issues.length===1?"cheez dekhni hai":"cheezein dekhni hain"}.</b></div>` : '<div style="margin-top:6px"><span class="tag t-ok">Sab sahi</span> <b>Aaj ka hisaab saaf hai.</b></div>';
+  addMsg(h, 'bot', 'parcha');
+  wlog(`Din band: sale ${rs(sale)}, galla khaate mein ${rs(book)}${counted!=null?', gina '+rs(counted):''}, masle ${issues.length}`);
+}
+document.getElementById('closeBtn').onclick = () => {
+  const v = prompt('Galle mein abhi kitna naqd hai? (gin kar likhein, ya khali chhor dein)');
+  if(v === null) return;
+  const n = v.trim() === '' ? null : Number(v.replace(/[^0-9.]/g,''));
+  addMsg('Din band karo' + (n != null ? ' — galle mein ' + rs(n) : ''), 'me');
+  doClosing(n);
+};
 
 /* ===== Render ===== */
 function render(){
