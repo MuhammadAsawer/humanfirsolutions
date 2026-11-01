@@ -283,14 +283,33 @@ function buildEntry(p){
   }
   if(!e.amount && p.type !== 'unknown') e.blocked = e.blocked || 'Raqam samajh nahi aayi.';
   if(e.confidence != null && e.confidence < 0.6) e.warnings.push('Agent ko khud yaqeen kam hai — ghaur se dekhein.');
+  const twin = findTwin(e, Date.now());
+  if(twin){ e.dupOf = twin.id; e.warnings.unshift(`Bilkul yahi entry ${Math.max(1, Math.round((Date.now()-twin.at)/60000))} minute pehle darj ho chuki hai — do baar to nahi likh rahe?`); }
   return e;
+}
+/* Ek jaisi entry 10 minute ke andar (ulti ki hui ya ulti karne wali entries shamil nahi) */
+function live(e){ return e.type !== 'opening' && e.type !== 'reversal' && !e.reversedBy; }
+function findTwin(e, at){
+  return S.entries.slice().reverse().find(x => x !== e && live(x) && x.type === e.type && x.party === e.party && x.amount === e.amount && at - x.at >= 0 && at - x.at < 10*60*1000) || null;
+}
+/* Ghalat entry mitai nahi jati — us ki ulti entry lagti hai, taake roznamcha saaf rahe */
+function reverseEntry(id){
+  const o = S.entries.find(x => x.id === id);
+  if(!o || !live(o)) return;
+  if(!confirm(`Yeh entry ulti karein?\n${TYPE_UR[o.type]} · ${o.party} · ${rs(o.amount)}`)) return;
+  const r = {id:'R'+Date.now().toString(36), at:Date.now(), type:'reversal', party:o.party, items:[], amount:o.amount, reverses:o.id, warnings:[], explain:'Ghalat entry ulti ki gayi',
+    lines:o.lines.map(l => ({...l, dr:l.cr||0, cr:l.dr||0}))};
+  o.reversedBy = r.id;
+  S.entries.push(r); save();
+  wlog(`Ulti ki gayi: ${TYPE_UR[o.type]} · ${o.party} · ${rs(o.amount)}`);
+  runChecks('entry ulti karne ke baad');
 }
 
 /* ===== Hisaab ===== */
 function accBal(acc){ let b = 0; for(const e of S.entries) for(const l of e.lines) if(l.acc === acc) b += (l.dr||0) - (l.cr||0); return b; }
 function partyBal(acc, party){ let b = 0; for(const e of S.entries) for(const l of e.lines) if(l.acc === acc && l.party === party) b += (l.dr||0) - (l.cr||0); return acc === 2000 ? -b : b; }
 
-const TYPE_UR = {opening:'Shuru ka naqd', sale:'Sale', purchase:'Kharid', expense:'Kharcha', receipt:'Wasooli', payment:'Adaigi', unknown:'Samajh nahi aaya'};
+const TYPE_UR = {opening:'Shuru ka naqd', reversal:'Ulti entry', sale:'Sale', purchase:'Kharid', expense:'Kharcha', receipt:'Wasooli', payment:'Adaigi', unknown:'Samajh nahi aaya'};
 function parchaHtml(e, p){
   let h = `<b>Parcha · ${TYPE_UR[e.type]||e.type}</b><div>${esc(e.explain)}</div>`;
   h += '<table>';
@@ -319,14 +338,14 @@ async function handle(text, auto){
   const e = buildEntry(p);
   const card = addMsg(parchaHtml(e, p), 'bot', 'parcha');
   const row = document.createElement('div'); row.className = 'row'; row.style.marginTop = '8px';
-  const yes = document.createElement('button'); yes.className = 'btn'; yes.textContent = 'Haan, darj karo'; yes.disabled = !!e.blocked;
+  const yes = document.createElement('button'); yes.className = e.dupOf ? 'btn red' : 'btn'; yes.textContent = e.dupOf ? 'Phir bhi darj karo' : 'Haan, darj karo'; yes.disabled = !!e.blocked;
   const no = document.createElement('button'); no.className = 'btn ghost'; no.textContent = 'Nahi';
   row.append(yes, no); card.appendChild(row);
   return new Promise(resolve => {
     const done = posted => { row.innerHTML = posted ? '<span class="tag t-ok">Darj ho gaya</span>' : '<span class="tag t-warn">Chhor diya</span>'; resolve(posted ? e : null); };
     yes.onclick = () => { post(e); done(true); };
     no.onclick = () => { wlog(`Malik ne parcha radd kiya: ${TYPE_UR[e.type]} ${rs(e.amount)}`); done(false); };
-    if(auto){ setTimeout(() => { if(e.blocked){ wlog('Auto demo: parcha ruka hua tha, darj nahi kiya — ' + e.blocked); done(false); } else { post(e); done(true); } }, 1500); }
+    if(auto){ setTimeout(() => { if(e.blocked || e.dupOf){ if(e.dupOf){ wlog('Auto demo: dohri entry ka khatra — darj nahi kiya'); done(false); return; } wlog('Auto demo: parcha ruka hua tha, darj nahi kiya — ' + e.blocked); done(false); } else { post(e); done(true); } }, 1500); }
   });
 }
 function post(e){
@@ -352,16 +371,15 @@ function runChecks(why){
   for(const c of SEED.customers){ const b = partyBal(1100, c); if(b < 0) out.push(['bad', `${c} ka udhaar manfi (${rs(b)}) — zyada wasooli?`]); }
   for(const s of SEED.suppliers){ const b = partyBal(2000, s); if(b < 0) out.push(['bad', `${s} ko zyada adaigi (${rs(b)}).`]); }
   for(const e of S.entries) for(const l of e.lines) if(l.acc === 1100 && (!l.party)) out.push(['bad', `Entry ${e.id}: bina naam ke udhaar.`]);
-  const seen = {};
   for(const e of S.entries){
-    const k = e.type + '|' + e.party + '|' + e.amount;
-    if(seen[k] && e.at - seen[k] < 10*60*1000) out.push(['warn', `Do jaisi entries 10 minute ke andar: ${TYPE_UR[e.type]} · ${e.party} · ${rs(e.amount)}. Kahin do baar to nahi likha?`]);
-    seen[k] = e.at;
+    if(!live(e)) continue;
+    const twin = findTwin(e, e.at);
+    if(twin) out.push(['warn', `Do jaisi entries 10 minute ke andar: ${TYPE_UR[e.type]} · ${e.party} · ${rs(e.amount)}. Kahin do baar to nahi likha?`, e.id]);
   }
-  const flagged = S.entries.filter(e => e.warnings.length).length;
+  const flagged = S.entries.filter(e => live(e) && e.warnings.length).length;
   if(flagged) out.push(['warn', `${flagged} entries par agent ne "dhyan" ka nishan lagaya tha — Khata mein dekh lein.`]);
-  const sales = S.entries.filter(e => e.type === 'sale').reduce((a,b)=>a+b.amount,0);
-  const purch = S.entries.filter(e => e.type === 'purchase').reduce((a,b)=>a+b.amount,0);
+  const sales = S.entries.filter(e => live(e) && e.type === 'sale').reduce((a,b)=>a+b.amount,0);
+  const purch = S.entries.filter(e => live(e) && e.type === 'purchase').reduce((a,b)=>a+b.amount,0);
   if(sales && purch > sales * 0.7) out.push(['warn', `Kharid sale ke ${Math.round(purch/sales*100)}% tak pahunch gayi — munafa kam lag raha hai.`]);
   lastChecks = out;
   const worst = out.some(x => x[0] === 'bad') ? 'bad' : out.some(x => x[0] === 'warn') ? 'warn' : 'ok';
@@ -377,13 +395,13 @@ setInterval(() => runChecks('har 30 second'), 30000);
 
 /* ===== Render ===== */
 function render(){
-  document.getElementById('checks').innerHTML = lastChecks.map(([lv, t]) => `<div class="chk"><span class="tag t-${lv}">${lv==='ok'?'Theek':lv==='warn'?'Dhyan':'Ghalti'}</span><div>${esc(t)}</div></div>`).join('');
+  document.getElementById('checks').innerHTML = lastChecks.map(([lv, t, fixId]) => `<div class="chk"><span class="tag t-${lv}">${lv==='ok'?'Theek':lv==='warn'?'Dhyan':'Ghalti'}</span><div>${esc(t)}${fixId?`<div style="margin-top:6px"><button class="btn ghost" onclick="reverseEntry('${fixId}')">Doosri entry ulti karo</button></div>`:''}</div></div>`).join('');
   document.getElementById('wlog').innerHTML = S.wlog.map(x => `<div>${esc(x)}</div>`).join('') || 'Abhi kuch nahi.';
   const sales = -accBal(4000), purch = accBal(5000), exp = accBal(6000);
   document.getElementById('kpi').innerHTML = `<div><small>Naqd</small><b>${rs(accBal(1000))}</b></div><div><small>Sale</small><b>${rs(sales)}</b></div><div><small>Munafa (andaza)</small><b>${rs(sales-purch-exp)}</b></div>`;
   document.getElementById('custT').innerHTML = SEED.customers.map(c => `<tr><td>${esc(c)}</td><td class="n">${rs(partyBal(1100,c))}</td></tr>`).join('');
   document.getElementById('suppT').innerHTML = SEED.suppliers.map(s => `<tr><td>${esc(s)}</td><td class="n">${rs(partyBal(2000,s))}</td></tr>`).join('');
-  document.getElementById('entT').innerHTML = S.entries.slice().reverse().map(e => `<tr><td>${new Date(e.at).toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}</td><td>${TYPE_UR[e.type]}${e.warnings.length?' <span class="tag t-warn">!</span>':''}</td><td>${esc(e.party)}</td><td class="n">${rs(e.amount)}</td></tr>`).join('') || '<tr><td class="mute">Abhi koi entry nahi</td></tr>';
+  document.getElementById('entT').innerHTML = S.entries.slice().reverse().map(e => `<tr><td>${new Date(e.at).toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}</td><td>${TYPE_UR[e.type]}${e.warnings.length?' <span class="tag t-warn">!</span>':''}</td><td>${esc(e.party)}${e.reversedBy?' <span class="tag t-bad">ulti ho chuki</span>':''}</td><td class="n">${rs(e.amount)}</td><td>${live(e)?`<button class="btn ghost" style="padding:4px 8px;font-size:12px" onclick="reverseEntry('${e.id}')">Ulta</button>`:''}</td></tr>`).join('') || '<tr><td class="mute">Abhi koi entry nahi</td></tr>';
   document.getElementById('menuT').innerHTML = SEED.menu.map(m => `<tr><td>${esc(m.name)}</td><td class="n">${rs(m.rate)}</td></tr>`).join('');
 }
 
