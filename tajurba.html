@@ -58,7 +58,7 @@ h3{margin:4px 0 8px;font-size:15px}
 </head>
 <body>
 <header>
-  <b>Tajurba-gah · Agent</b>
+  <b>Tajurba-gah · Agent <small id="ver" style="font-weight:400;opacity:.75;font-size:11px"></small></b>
   <span class="watch"><span class="dot" id="wdot"></span><span id="wtxt">Chowkidar jaag raha hai</span></span>
 </header>
 <nav>
@@ -145,6 +145,7 @@ function fresh(){ return {entries:[{id:'OPEN', at:Date.now(), type:'opening', pa
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 function getSet(k,d){ try{ return localStorage.getItem(k) || d; }catch(e){ return d; } }
 function setSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+const APP_VER = 'TAJ-2026-11-01-c';
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const rs = n => 'Rs ' + Math.round(n).toLocaleString('en-PK');
 const now = () => new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -474,6 +475,7 @@ document.getElementById('wipe').onclick = () => {
   S = fresh(); save(); chat.innerHTML = ''; lastChecks = []; runChecks('saaf karne ke baad');
 };
 
+document.getElementById('ver').textContent = 'v ' + APP_VER.slice(-1);
 runChecks('khulte waqt');
 </script>
 </body>
