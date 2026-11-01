@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="ur">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HF Tajurba-gah</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f4ef;--card:#fff;--ink:#1d2321;--mute:#6b736f;--line:#e3dfd6;--brand:#0f6b4f;--brand2:#e8f3ee;--warn:#b26b00;--warnbg:#fff4e0;--bad:#b42318;--badbg:#fdecea;--ok:#0f6b4f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:15px}
+.ur{font-family:'Noto Nastaliq Urdu',Inter,serif;line-height:2}
+header{background:var(--brand);color:#fff;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:5}
+header b{font-size:17px}
+.watch{font-size:12px;display:flex;align-items:center;gap:6px}
+.dot{width:9px;height:9px;border-radius:50%;background:#7CFFB2;animation:p 1.6s infinite}
+.dot.warn{background:#ffc04d}.dot.bad{background:#ff6b5e}
+@keyframes p{50%{opacity:.3}}
+nav{display:flex;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:46px;z-index:4}
+nav button{flex:1;border:0;background:none;padding:11px 4px;font:600 13px Inter;color:var(--mute);border-bottom:3px solid transparent}
+nav button.on{color:var(--brand);border-color:var(--brand)}
+main{max-width:720px;margin:0 auto;padding:12px 12px 140px}
+.screen{display:none}.screen.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+.msg{max-width:88%;padding:9px 12px;border-radius:12px;margin:6px 0;white-space:pre-wrap}
+.me{background:var(--brand);color:#fff;margin-left:auto}
+.bot{background:var(--card);border:1px solid var(--line)}
+.parcha{border:2px solid var(--brand);background:var(--brand2)}
+.parcha table{width:100%;border-collapse:collapse;font-size:13px;margin:6px 0}
+.parcha td{padding:3px 4px;border-bottom:1px dashed #cfe3da}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:9px;padding:9px 14px;font:600 14px Inter;background:var(--brand);color:#fff;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.red{background:var(--bad)}
+.btn:disabled{opacity:.5}
+#composer{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;z-index:6}
+#composer textarea{flex:1;resize:none;border:1px solid var(--line);border-radius:10px;padding:9px;font:15px Inter;min-height:44px;max-height:120px}
+#mic{width:46px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:20px}
+#mic.live{background:var(--badbg);border-color:var(--bad)}
+.chk{display:flex;gap:8px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--line)}
+.chk:last-child{border:0}
+.tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.t-ok{background:var(--brand2);color:var(--ok)}.t-warn{background:var(--warnbg);color:var(--warn)}.t-bad{background:var(--badbg);color:var(--bad)}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.kpi div{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px}
+.kpi small{color:var(--mute);display:block;font-size:11px}
+.kpi b{font-size:16px}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t td,table.t th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+table.t td.n,table.t th.n{text-align:right}
+label{display:block;font-size:13px;color:var(--mute);margin:8px 0 3px}
+input,select{width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;font:15px Inter}
+.mute{color:var(--mute);font-size:13px}
+.log{font-size:12px;color:var(--mute)}
+h3{margin:4px 0 8px;font-size:15px}
+</style>
+</head>
+<body>
+<header>
+  <b>Tajurba-gah · Agent</b>
+  <span class="watch"><span class="dot" id="wdot"></span><span id="wtxt">Chowkidar jaag raha hai</span></span>
+</header>
+<nav>
+  <button class="on" data-s="agent">Agent</button>
+  <button data-s="nigrani">Nigrani</button>
+  <button data-s="khata">Khata</button>
+  <button data-s="settings">Settings</button>
+</nav>
+<main>
+  <section class="screen on" id="s-agent">
+    <div class="card mute">Yeh farzi restaurant hai — koi asal client ka data nahi. Urdu ya Roman mein likhein ya mic dabayein, jaise:<br>
+      <i>"Ali bhai ko 1 chicken karahi aur 4 naan udhaar"</i> · <i>"Madina poultry se 10 kilo chicken 7500 ka liya"</i> · <i>"bijli ka bill 12000 diya"</i></div>
+    <div class="row" style="margin-bottom:8px">
+      <button class="btn ghost" id="autoBtn">▶ Khud chalao (auto demo)</button>
+    </div>
+    <div id="chat"></div>
+  </section>
+
+  <section class="screen" id="s-nigrani">
+    <div class="card">
+      <h3>Chowkidar ki jaanch</h3>
+      <div class="mute" id="lastRun"></div>
+      <div id="checks"></div>
+    </div>
+    <div class="card">
+      <h3>Chowkidar ka roznamcha</h3>
+      <div id="wlog" class="log"></div>
+    </div>
+  </section>
+
+  <section class="screen" id="s-khata">
+    <div class="kpi" id="kpi"></div>
+    <div class="card"><h3>Grahak ka udhaar</h3><table class="t" id="custT"></table></div>
+    <div class="card"><h3>Supplier ko dena</h3><table class="t" id="suppT"></table></div>
+    <div class="card"><h3>Entries (nayi upar)</h3><table class="t" id="entT"></table></div>
+  </section>
+
+  <section class="screen" id="s-settings">
+    <div class="card">
+      <h3>Gemini key</h3>
+      <div class="mute">Key sirf isi phone mein rehti hai — kisi file, GitHub ya cloud par nahi jati.</div>
+      <label>API key</label><input id="keyIn" type="password" placeholder="AIza...">
+      <label>Model</label><input id="modelIn">
+      <div class="row" style="margin-top:10px"><button class="btn" id="saveKey">Save</button><button class="btn ghost" id="testKey">Jaanch karo</button></div>
+      <div class="mute" id="keyMsg" style="margin-top:6px"></div>
+    </div>
+    <div class="card">
+      <h3>Farzi menu</h3><table class="t" id="menuT"></table>
+    </div>
+    <div class="card">
+      <h3>Sab saaf karein</h3>
+      <div class="mute">Saari entries mit jayengi, menu aur grahak wapas shuru wale.</div>
+      <button class="btn red" id="wipe" style="margin-top:8px">Saaf karo</button>
+    </div>
+  </section>
+</main>
+<div id="composer">
+  <button id="mic" title="Bolein">🎤</button>
+  <textarea id="inp" rows="1" placeholder="Agent ko likhein..." dir="auto"></textarea>
+  <button class="btn" id="send">Bhejo</button>
+</div>
+
+<script>
+/* ===== Farzi restaurant ka data ===== */
+const SEED = {
+  name: 'Farzi Darbar Restaurant',
+  menu: [
+    {id:'m1',name:'Chicken Karahi (Full)',rate:2400},{id:'m2',name:'Chicken Karahi (Half)',rate:1300},
+    {id:'m3',name:'Mutton Karahi (Full)',rate:3800},{id:'m4',name:'Chicken Biryani',rate:450},
+    {id:'m5',name:'Daal Mash',rate:400},{id:'m6',name:'Chicken Handi',rate:1600},
+    {id:'m7',name:'Roti',rate:30},{id:'m8',name:'Naan',rate:50},{id:'m9',name:'Raita',rate:100},
+    {id:'m10',name:'Salad',rate:120},{id:'m11',name:'Cold Drink 1.5L',rate:250},{id:'m12',name:'Chai',rate:80}
+  ],
+  customers: ['Ali Bhai','Kashif Hotel','Rana Sahab','Bilal Traders','Usama Catering'],
+  suppliers: ['Al-Madina Poultry','Haji Sabzi Wala','Bilal Karyana Store','Gas Agency'],
+  rawMaterials: ['Chicken','Mutton','Atta','Ghee','Tamatar','Pyaz','Adrak Lehsan','Masala','Chawal','Daal','Cold Drink','Doodh','Patti'],
+  expenseHeads: ['Bijli','Gas','Tankhwah','Kiraya','Mutafarriq']
+};
+const ACC = {3900:'Shuru ka sarmaya',1000:'Naqd (Cash)',1100:'Grahak ka udhaar',2000:'Supplier ko dena',4000:'Sale',5000:'Kharid (Purchases)',6000:'Kharche'};
+const KEY = 'hf_tajurba_v1';
+let S = load();
+function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s && s.entries) return s; }catch(e){} return fresh(); }
+function fresh(){ return {entries:[{id:'OPEN', at:Date.now(), type:'opening', party:'Shuru ka naqd', items:[], amount:50000, lines:[{acc:1000, dr:50000},{acc:3900, cr:50000}], warnings:[], explain:'Din ke shuru mein galle ka naqd'}], wlog:[], history:[]}; }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+function getSet(k,d){ try{ return localStorage.getItem(k) || d; }catch(e){ return d; } }
+function setSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
+const rs = n => 'Rs ' + Math.round(n).toLocaleString('en-PK');
+const now = () => new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm = s => String(s||'').toLowerCase().replace(/[^a-z0-9؀-ۿ]/g,'');
+
+/* ===== Tabs ===== */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.screen').forEach(x => x.classList.toggle('on', x.id === 's-' + b.dataset.s));
+  document.getElementById('composer').style.display = b.dataset.s === 'agent' ? 'flex' : 'none';
+  render();
+});
+
+/* ===== Chat ===== */
+const chat = document.getElementById('chat');
+function addMsg(html, who, extraClass){
+  const d = document.createElement('div');
+  d.className = 'msg ' + who + (extraClass ? ' ' + extraClass : '');
+  d.dir = 'auto'; d.innerHTML = html;
+  chat.appendChild(d); window.scrollTo(0, document.body.scrollHeight);
+  return d;
+}
+
+/* ===== Entry agent (Gemini) ===== */
+function systemPrompt(){
+  return `Tum ek Pakistani restaurant "${SEED.name}" ke hisaab ke madadgar agent ho.
+Malik Urdu, Roman Urdu ya English mein batata hai ke kya hua. Tumhara kaam sirf usay samajh kar ek JSON parcha banana hai. Tum khud kuch darj nahi karte; malik "haan" kare to app darj karegi.
+
+Menu (naam: rate): ${SEED.menu.map(m=>m.name+': '+m.rate).join('; ')}
+Naam wale grahak: ${SEED.customers.join(', ')}
+Suppliers: ${SEED.suppliers.join(', ')}
+Kachcha maal: ${SEED.rawMaterials.join(', ')}
+Kharche ke khaate: ${SEED.expenseHeads.join(', ')}
+
+Qismein (type):
+- "sale": grahak ko khana becha. items mein menu ke BILKUL wohi naam likho jo upar hain. rate na bataya ho to menu ka rate. party: grahak ka naam ya "Walk-in".
+- "purchase": supplier se kachcha maal liya. items mein maal, qty, unit, rate; amount kul raqam.
+- "expense": kharcha (bijli, gas, tankhwah waghera). head upar wale khaaton mein se.
+- "receipt": grahak ne purana udhaar wapas diya.
+- "payment": supplier ko purani raqam di.
+- "unknown": samajh na aaye.
+
+Udhaar ka usool: "udhaar", "baad mein dega", "khaate mein" ho to credit=true. Warna naqd: credit=false.
+paid: agar kuch raqam abhi di gayi aur baaqi udhaar, to paid mein woh raqam; warna null.
+Naam milta julta ho (jaise "ali bhai", "kashif") to upar ki fehrist ka poora naam likho.
+Agar raqam, naam ya cheez wazeh na ho to andaza na lagao — questions mein seedha sawal likho.
+confidence 0 se 1.
+explain: malik ke liye ek chhota jumla, Roman Urdu mein, ke tum ne kya samjha.
+
+SIRF yeh JSON lautao:
+{"type":"sale|purchase|expense|receipt|payment|unknown","party":string|null,"items":[{"name":string,"qty":number,"unit":string|null,"rate":number|null}],"amount":number|null,"credit":boolean,"paid":number|null,"head":string|null,"note":string|null,"explain":string,"questions":[string],"confidence":number}`;
+}
+async function askAgent(text){
+  const key = getSet('hf_gemini_key','');
+  if(!key) throw new Error('Pehle Settings mein Gemini key daalein.');
+  const model = getSet('hf_gemini_model', DEFAULT_MODEL);
+  S.history.push({role:'user', parts:[{text}]});
+  S.history = S.history.slice(-8);
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-goog-api-key':key},
+    body: JSON.stringify({
+      systemInstruction:{parts:[{text:systemPrompt()}]},
+      contents: S.history,
+      generationConfig:{responseMimeType:'application/json', temperature:0.1}
+    })
+  });
+  const j = await res.json().catch(() => ({}));
+  if(!res.ok) throw new Error((j.error && j.error.message) || ('Gemini ne ghalti di: ' + res.status));
+  const raw = j.candidates?.[0]?.content?.parts?.map(p => p.text).join('') || '';
+  S.history.push({role:'model', parts:[{text:raw}]});
+  save();
+  let p; try{ p = JSON.parse(raw); }catch(e){ throw new Error('Agent ka jawab samajh nahi aaya: ' + raw.slice(0,120)); }
+  return p;
+}
+
+/* ===== Parcha ko pakka hisaab mein badalna (yeh app karti hai, agent nahi) ===== */
+function findMenu(name){ const n = norm(name); return SEED.menu.find(m => norm(m.name) === n) || SEED.menu.find(m => norm(m.name).includes(n) || n.includes(norm(m.name))); }
+function findIn(list, name){ if(!name) return null; const n = norm(name); return list.find(x => norm(x) === n) || list.find(x => norm(x).includes(n) || n.includes(norm(x))) || null; }
+function isWalkIn(p){ return !p || /walk/i.test(p); }
+
+function buildEntry(p){
+  const e = {id:'E'+Date.now().toString(36)+Math.random().toString(36).slice(2,5), at:Date.now(), type:p.type, party:p.party||null, items:[], amount:0, lines:[], warnings:[], blocked:null, explain:p.explain||'', confidence:p.confidence ?? null, raw:p};
+  const items = Array.isArray(p.items) ? p.items : [];
+  if(p.type === 'sale'){
+    const cust = isWalkIn(p.party) ? null : findIn(SEED.customers, p.party);
+    if(!isWalkIn(p.party) && !cust) e.warnings.push(`"${p.party}" naam wale grahakon mein nahi — Walk-in samjha gaya.`);
+    e.party = cust || 'Walk-in';
+    for(const it of items){
+      const m = findMenu(it.name); const qty = Number(it.qty)||1;
+      const rate = Number(it.rate) || (m ? m.rate : 0);
+      if(!m) e.warnings.push(`"${it.name}" menu mein nahi.`);
+      else if(it.rate && Math.abs(it.rate - m.rate)/m.rate > 0.25) e.warnings.push(`${m.name} ka rate ${it.rate} likha, menu mein ${m.rate}.`);
+      e.items.push({name:m ? m.name : it.name, qty, rate, total:qty*rate});
+    }
+    e.amount = e.items.reduce((a,b)=>a+b.total,0) || Number(p.amount)||0;
+    let paid = p.credit ? (p.paid != null ? Number(p.paid) : 0) : e.amount;
+    if(p.credit && !cust){ e.blocked = 'Walk-in grahak ko udhaar nahi diya ja sakta — naam wala grahak chunein.'; }
+    paid = Math.min(Math.max(paid,0), e.amount);
+    if(paid) e.lines.push({acc:1000, dr:paid});
+    if(e.amount - paid) e.lines.push({acc:1100, dr:e.amount - paid, party:cust});
+    e.lines.push({acc:4000, cr:e.amount});
+  }
+  else if(p.type === 'purchase'){
+    const sup = findIn(SEED.suppliers, p.party);
+    e.party = sup || p.party || '—';
+    for(const it of items){ const qty = Number(it.qty)||1; const rate = Number(it.rate)||0; e.items.push({name:it.name, qty, unit:it.unit, rate, total:qty*rate}); }
+    const sum = e.items.reduce((a,b)=>a+b.total,0);
+    e.amount = Number(p.amount) || sum;
+    if(sum && p.amount && Math.abs(sum - p.amount) > 1) e.warnings.push(`Cheezon ka jor ${rs(sum)} hai magar kul ${rs(p.amount)} likha.`);
+    let paid = p.credit ? (p.paid != null ? Number(p.paid) : 0) : e.amount;
+    if(p.credit && !sup) e.blocked = 'Udhaar sirf fehrist wale supplier se — yeh naam fehrist mein nahi.';
+    paid = Math.min(Math.max(paid,0), e.amount);
+    e.lines.push({acc:5000, dr:e.amount});
+    if(paid) e.lines.push({acc:1000, cr:paid});
+    if(e.amount - paid) e.lines.push({acc:2000, cr:e.amount - paid, party:sup});
+  }
+  else if(p.type === 'expense'){
+    const head = findIn(SEED.expenseHeads, p.head) || 'Mutafarriq';
+    e.party = head; e.amount = Number(p.amount)||0;
+    if(e.amount > 50000) e.warnings.push('Ek hi kharcha 50,000 se zyada — dobara dekh lein.');
+    e.lines.push({acc:6000, dr:e.amount, head}); e.lines.push({acc:1000, cr:e.amount});
+  }
+  else if(p.type === 'receipt'){
+    const cust = findIn(SEED.customers, p.party); e.party = cust || p.party; e.amount = Number(p.amount)||0;
+    if(!cust) e.blocked = 'Yeh grahak fehrist mein nahi.';
+    else if(e.amount > partyBal(1100, cust)) e.blocked = `${cust} ka udhaar sirf ${rs(partyBal(1100,cust))} hai — is se zyada wasooli nahi.`;
+    e.lines.push({acc:1000, dr:e.amount}); e.lines.push({acc:1100, cr:e.amount, party:cust});
+  }
+  else if(p.type === 'payment'){
+    const sup = findIn(SEED.suppliers, p.party); e.party = sup || p.party; e.amount = Number(p.amount)||0;
+    if(!sup) e.blocked = 'Yeh supplier fehrist mein nahi.';
+    else if(e.amount > partyBal(2000, sup)) e.blocked = `${sup} ko sirf ${rs(partyBal(2000,sup))} dena hai — is se zyada nahi.`;
+    e.lines.push({acc:2000, dr:e.amount, party:sup}); e.lines.push({acc:1000, cr:e.amount});
+  }
+  if(!e.amount && p.type !== 'unknown') e.blocked = e.blocked || 'Raqam samajh nahi aayi.';
+  if(e.confidence != null && e.confidence < 0.6) e.warnings.push('Agent ko khud yaqeen kam hai — ghaur se dekhein.');
+  return e;
+}
+
+/* ===== Hisaab ===== */
+function accBal(acc){ let b = 0; for(const e of S.entries) for(const l of e.lines) if(l.acc === acc) b += (l.dr||0) - (l.cr||0); return b; }
+function partyBal(acc, party){ let b = 0; for(const e of S.entries) for(const l of e.lines) if(l.acc === acc && l.party === party) b += (l.dr||0) - (l.cr||0); return acc === 2000 ? -b : b; }
+
+const TYPE_UR = {opening:'Shuru ka naqd', sale:'Sale', purchase:'Kharid', expense:'Kharcha', receipt:'Wasooli', payment:'Adaigi', unknown:'Samajh nahi aaya'};
+function parchaHtml(e, p){
+  let h = `<b>Parcha · ${TYPE_UR[e.type]||e.type}</b><div>${esc(e.explain)}</div>`;
+  h += '<table>';
+  h += `<tr><td>Naam</td><td><b>${esc(e.party||'—')}</b></td></tr>`;
+  for(const it of e.items) h += `<tr><td>${esc(it.qty)} × ${esc(it.name)}${it.unit?' ('+esc(it.unit)+')':''}</td><td>${rs(it.total)}</td></tr>`;
+  h += `<tr><td>Kul</td><td><b>${rs(e.amount)}</b></td></tr>`;
+  for(const l of e.lines) h += `<tr><td class="mute">${l.dr?'Dr':'Cr'} ${ACC[l.acc]}${l.party?' · '+esc(l.party):''}${l.head?' · '+esc(l.head):''}</td><td class="mute">${rs(l.dr||l.cr)}</td></tr>`;
+  h += '</table>';
+  for(const w of e.warnings) h += `<div><span class="tag t-warn">Dhyan</span> ${esc(w)}</div>`;
+  if(e.blocked) h += `<div><span class="tag t-bad">Ruka</span> ${esc(e.blocked)}</div>`;
+  if(p.questions && p.questions.length) h += `<div><span class="tag t-warn">Sawal</span> ${esc(p.questions.join(' · '))}</div>`;
+  return h;
+}
+
+async function handle(text, auto){
+  addMsg(esc(text), 'me');
+  const wait = addMsg('…soch raha hoon', 'bot');
+  let p;
+  try{ p = await askAgent(text); }
+  catch(err){ wait.innerHTML = '<span class="tag t-bad">Masla</span> ' + esc(err.message); return null; }
+  wait.remove();
+  if(p.type === 'unknown' || (p.questions && p.questions.length && !p.amount && !(p.items||[]).length)){
+    addMsg(esc(p.explain || '') + (p.questions && p.questions.length ? '\n' + esc(p.questions.join('\n')) : ''), 'bot');
+    return null;
+  }
+  const e = buildEntry(p);
+  const card = addMsg(parchaHtml(e, p), 'bot', 'parcha');
+  const row = document.createElement('div'); row.className = 'row'; row.style.marginTop = '8px';
+  const yes = document.createElement('button'); yes.className = 'btn'; yes.textContent = 'Haan, darj karo'; yes.disabled = !!e.blocked;
+  const no = document.createElement('button'); no.className = 'btn ghost'; no.textContent = 'Nahi';
+  row.append(yes, no); card.appendChild(row);
+  return new Promise(resolve => {
+    const done = posted => { row.innerHTML = posted ? '<span class="tag t-ok">Darj ho gaya</span>' : '<span class="tag t-warn">Chhor diya</span>'; resolve(posted ? e : null); };
+    yes.onclick = () => { post(e); done(true); };
+    no.onclick = () => { wlog(`Malik ne parcha radd kiya: ${TYPE_UR[e.type]} ${rs(e.amount)}`); done(false); };
+    if(auto){ setTimeout(() => { if(e.blocked){ wlog('Auto demo: parcha ruka hua tha, darj nahi kiya — ' + e.blocked); done(false); } else { post(e); done(true); } }, 1500); }
+  });
+}
+function post(e){
+  S.entries.push(e); save();
+  wlog(`Darj: ${TYPE_UR[e.type]} · ${e.party} · ${rs(e.amount)}`);
+  runChecks('entry ke baad');
+}
+
+/* ===== Chowkidar (validation agent) — har entry ke baad aur har 30 second ===== */
+let lastChecks = [];
+function runChecks(why){
+  const out = [];
+  let dr = 0, cr = 0;
+  for(const e of S.entries){
+    let edr = 0, ecr = 0;
+    for(const l of e.lines){ edr += l.dr||0; ecr += l.cr||0; }
+    dr += edr; cr += ecr;
+    if(Math.abs(edr - ecr) > 0.5) out.push(['bad', `Entry ${e.id} khud barabar nahi (Dr ${rs(edr)} / Cr ${rs(ecr)}).`]);
+  }
+  out.push(Math.abs(dr - cr) < 0.5 ? ['ok', `Hisaab barabar hai — Dr ${rs(dr)} = Cr ${rs(cr)}.`] : ['bad', `Hisaab barabar NAHI — farq ${rs(dr - cr)}.`]);
+  const cash = accBal(1000);
+  out.push(cash < 0 ? ['bad', `Galle mein naqd manfi hai: ${rs(cash)}. Koi kharid/kharcha naqd se zyada likha gaya.`] : ['ok', `Naqd: ${rs(cash)}.`]);
+  for(const c of SEED.customers){ const b = partyBal(1100, c); if(b < 0) out.push(['bad', `${c} ka udhaar manfi (${rs(b)}) — zyada wasooli?`]); }
+  for(const s of SEED.suppliers){ const b = partyBal(2000, s); if(b < 0) out.push(['bad', `${s} ko zyada adaigi (${rs(b)}).`]); }
+  for(const e of S.entries) for(const l of e.lines) if(l.acc === 1100 && (!l.party)) out.push(['bad', `Entry ${e.id}: bina naam ke udhaar.`]);
+  const seen = {};
+  for(const e of S.entries){
+    const k = e.type + '|' + e.party + '|' + e.amount;
+    if(seen[k] && e.at - seen[k] < 10*60*1000) out.push(['warn', `Do jaisi entries 10 minute ke andar: ${TYPE_UR[e.type]} · ${e.party} · ${rs(e.amount)}. Kahin do baar to nahi likha?`]);
+    seen[k] = e.at;
+  }
+  const flagged = S.entries.filter(e => e.warnings.length).length;
+  if(flagged) out.push(['warn', `${flagged} entries par agent ne "dhyan" ka nishan lagaya tha — Khata mein dekh lein.`]);
+  const sales = S.entries.filter(e => e.type === 'sale').reduce((a,b)=>a+b.amount,0);
+  const purch = S.entries.filter(e => e.type === 'purchase').reduce((a,b)=>a+b.amount,0);
+  if(sales && purch > sales * 0.7) out.push(['warn', `Kharid sale ke ${Math.round(purch/sales*100)}% tak pahunch gayi — munafa kam lag raha hai.`]);
+  lastChecks = out;
+  const worst = out.some(x => x[0] === 'bad') ? 'bad' : out.some(x => x[0] === 'warn') ? 'warn' : 'ok';
+  const dot = document.getElementById('wdot'); dot.className = 'dot' + (worst === 'ok' ? '' : ' ' + worst);
+  document.getElementById('wtxt').textContent = worst === 'ok' ? 'Chowkidar: sab theek' : worst === 'warn' ? 'Chowkidar: dhyan dein' : 'Chowkidar: ghalti mili';
+  document.getElementById('lastRun').textContent = `Aakhri jaanch ${now()} (${why})`;
+  const prev = S._lastWorst; S._lastWorst = worst;
+  if(prev && prev !== worst) wlog(`Halat badli: ${prev} → ${worst}`);
+  save(); render();
+}
+function wlog(t){ S.wlog.unshift(now() + ' · ' + t); S.wlog = S.wlog.slice(0, 80); save(); }
+setInterval(() => runChecks('har 30 second'), 30000);
+
+/* ===== Render ===== */
+function render(){
+  document.getElementById('checks').innerHTML = lastChecks.map(([lv, t]) => `<div class="chk"><span class="tag t-${lv}">${lv==='ok'?'Theek':lv==='warn'?'Dhyan':'Ghalti'}</span><div>${esc(t)}</div></div>`).join('');
+  document.getElementById('wlog').innerHTML = S.wlog.map(x => `<div>${esc(x)}</div>`).join('') || 'Abhi kuch nahi.';
+  const sales = -accBal(4000), purch = accBal(5000), exp = accBal(6000);
+  document.getElementById('kpi').innerHTML = `<div><small>Naqd</small><b>${rs(accBal(1000))}</b></div><div><small>Sale</small><b>${rs(sales)}</b></div><div><small>Munafa (andaza)</small><b>${rs(sales-purch-exp)}</b></div>`;
+  document.getElementById('custT').innerHTML = SEED.customers.map(c => `<tr><td>${esc(c)}</td><td class="n">${rs(partyBal(1100,c))}</td></tr>`).join('');
+  document.getElementById('suppT').innerHTML = SEED.suppliers.map(s => `<tr><td>${esc(s)}</td><td class="n">${rs(partyBal(2000,s))}</td></tr>`).join('');
+  document.getElementById('entT').innerHTML = S.entries.slice().reverse().map(e => `<tr><td>${new Date(e.at).toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit'})}</td><td>${TYPE_UR[e.type]}${e.warnings.length?' <span class="tag t-warn">!</span>':''}</td><td>${esc(e.party)}</td><td class="n">${rs(e.amount)}</td></tr>`).join('') || '<tr><td class="mute">Abhi koi entry nahi</td></tr>';
+  document.getElementById('menuT').innerHTML = SEED.menu.map(m => `<tr><td>${esc(m.name)}</td><td class="n">${rs(m.rate)}</td></tr>`).join('');
+}
+
+/* ===== Composer + mic ===== */
+const inp = document.getElementById('inp');
+async function sendNow(){ const t = inp.value.trim(); if(!t) return; inp.value = ''; await handle(t); }
+document.getElementById('send').onclick = sendNow;
+inp.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendNow(); } });
+const micBtn = document.getElementById('mic');
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if(!SR){ micBtn.onclick = () => alert('Is browser mein mic ki suhulat nahi — Chrome istemal karein.'); }
+else {
+  let rec = null;
+  micBtn.onclick = () => {
+    if(rec){ rec.stop(); return; }
+    rec = new SR(); rec.lang = 'ur-PK'; rec.interimResults = true; rec.continuous = false;
+    micBtn.classList.add('live');
+    rec.onresult = ev => { inp.value = Array.from(ev.results).map(r => r[0].transcript).join(' '); };
+    rec.onerror = ev => { addMsg('<span class="tag t-bad">Mic</span> ' + esc(ev.error), 'bot'); };
+    rec.onend = () => { micBtn.classList.remove('live'); rec = null; };
+    rec.start();
+  };
+}
+
+/* ===== Auto demo: agent khud entries karta hai, chowkidar dekhta hai ===== */
+const SCRIPT = [
+  'Al-Madina Poultry se 20 kilo chicken liya 650 rupay kilo, 5000 diye baaqi udhaar',
+  'Table 3 walk-in: 1 chicken karahi full, 6 naan, 2 cold drink, cash',
+  'Ali bhai ko 1 mutton karahi full aur 4 roti udhaar',
+  'Haji sabzi wala se tamatar pyaz 3200 ka naqd liya',
+  'bijli ka bill 12000 diya',
+  'walk-in grahak ko 2 biryani udhaar de do',
+  'Ali bhai ne 2000 wapas diye',
+  'Al-Madina Poultry ko 3000 de diye'
+];
+let autoRunning = false;
+document.getElementById('autoBtn').onclick = async () => {
+  if(autoRunning){ autoRunning = false; return; }
+  if(!getSet('hf_gemini_key','')){ alert('Pehle Settings mein Gemini key daalein.'); return; }
+  autoRunning = true; const b = document.getElementById('autoBtn'); b.textContent = '■ Roko';
+  wlog('Auto demo shuru');
+  for(const line of SCRIPT){
+    if(!autoRunning) break;
+    await handle(line, true);
+    await new Promise(r => setTimeout(r, 5000)); // muft model ki had ka khayal
+  }
+  autoRunning = false; b.textContent = '▶ Khud chalao (auto demo)'; wlog('Auto demo khatam'); runChecks('auto demo ke baad');
+};
+
+/* ===== Settings ===== */
+document.getElementById('keyIn').value = getSet('hf_gemini_key','');
+document.getElementById('modelIn').value = getSet('hf_gemini_model', DEFAULT_MODEL);
+document.getElementById('saveKey').onclick = () => {
+  setSet('hf_gemini_key', document.getElementById('keyIn').value.trim());
+  setSet('hf_gemini_model', document.getElementById('modelIn').value.trim() || DEFAULT_MODEL);
+  document.getElementById('keyMsg').textContent = 'Save ho gaya (sirf is phone par).';
+};
+document.getElementById('testKey').onclick = async () => {
+  document.getElementById('saveKey').click();
+  const m = document.getElementById('keyMsg'); m.textContent = 'Jaanch ho rahi hai…';
+  try{
+    const key = getSet('hf_gemini_key',''); const model = getSet('hf_gemini_model', DEFAULT_MODEL);
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {method:'POST', headers:{'Content-Type':'application/json','x-goog-api-key':key}, body:JSON.stringify({contents:[{role:'user',parts:[{text:'Sirf "theek" likho'}]}]})});
+    const j = await r.json();
+    m.textContent = r.ok ? '✓ Key aur model dono chal rahe hain.' : '✗ ' + (j.error?.message || r.status) + ' — model ka naam badal kar dekhein (jaise gemini-3.8-flash).';
+  }catch(e){ m.textContent = '✗ ' + e.message; }
+};
+document.getElementById('wipe').onclick = () => {
+  if(!confirm('Saari entries mita dein?')) return;
+  S = fresh(); save(); chat.innerHTML = ''; lastChecks = []; runChecks('saaf karne ke baad');
+};
+
+runChecks('khulte waqt');
+</script>
+</body>
+</html>
