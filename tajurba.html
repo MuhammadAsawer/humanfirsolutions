@@ -145,7 +145,7 @@ function fresh(){ return {entries:[{id:'OPEN', at:Date.now(), type:'opening', pa
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
 function getSet(k,d){ try{ return localStorage.getItem(k) || d; }catch(e){ return d; } }
 function setSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
-const APP_VER = 'TAJ-2026-11-01-c';
+const APP_VER = 'TAJ-2026-11-01-d';
 const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
 const rs = n => 'Rs ' + Math.round(n).toLocaleString('en-PK');
 const now = () => new Date().toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
@@ -381,7 +381,8 @@ function runChecks(why){
   if(flagged) out.push(['warn', `${flagged} entries par agent ne "dhyan" ka nishan lagaya tha — Khata mein dekh lein.`]);
   const sales = S.entries.filter(e => live(e) && e.type === 'sale').reduce((a,b)=>a+b.amount,0);
   const purch = S.entries.filter(e => live(e) && e.type === 'purchase').reduce((a,b)=>a+b.amount,0);
-  if(sales && purch > sales * 0.7) out.push(['warn', `Kharid sale ke ${Math.round(purch/sales*100)}% tak pahunch gayi — munafa kam lag raha hai.`]);
+  if(sales && purch > sales) out.push(['warn', `Aaj kharid ${rs(purch)}, sale sirf ${rs(sales)} — maal sale se zyada ka khareeda gaya, is waqt NUQSAN dikh raha hai. (Kachcha maal agle dinon bhi chalta hai, is liye din ke shuru mein aisa ho sakta hai.)`]);
+  else if(sales && purch > sales * 0.7) out.push(['warn', `Aaj kharid ${rs(purch)}, sale ${rs(sales)} — har 100 rupay ki sale par ${Math.round(purch/sales*100)} rupay ka maal laga. Munafa KAM hai.`]);
   lastChecks = out;
   const worst = out.some(x => x[0] === 'bad') ? 'bad' : out.some(x => x[0] === 'warn') ? 'warn' : 'ok';
   const dot = document.getElementById('wdot'); dot.className = 'dot' + (worst === 'ok' ? '' : ' ' + worst);
