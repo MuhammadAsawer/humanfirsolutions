@@ -3862,6 +3862,7 @@ async function bootCloud(){
 
         setSync('ok', rows.length + ' entries');
         save();
+        if(typeof agPracticeCheck === 'function') await agPracticeCheck();
       }catch(e){
         // Pull na ho saka — jo pehle se maujood tha wahi rahega, mitao mat
         console.error('pull:', e.message);
@@ -5695,7 +5696,7 @@ function applySetupPacket(client, packet){
    - Chowkidar har entry ke baad aur har 30 second poore khaate ko jaanchta hai.
    ========================================================================= */
 const AG = { hist: [], busy: false, watch: [], timer: null, pending: null };
-const AG_VER = 'AGENT-2026-11-04-c';
+const AG_VER = 'AGENT-2026-11-04-d';
 const AG_WINDOW = 10 * 60 * 1000;   // dohri entry: 10 minute
 
 function agNorm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9؀-ۿ]/g,''); }
@@ -6085,12 +6086,74 @@ function agClosing(counted){
   }
 }
 
+/* ---- MASHQ (practice) account: login "<naam>-seekh".
+   Aaj ka kaam din band ke baad bhi dekha ja sakta hai (ledger, reports).
+   AGLE DIN app khulte hi pichhle dinon ka saara transactional data saaf:
+   phone, cloud ki qatar, aur cloud — catalog (menu/grahak/supplier) shuru wala. ---- */
+function agIsPractice(){
+  const em = (session && session.user && session.user.email) || '';
+  return /-seekh@/i.test(em);
+}
+const AG_TX = ['orders','journal','payments','purchases','expenses','voids','returns','capitalEntries'];
+function agBaseKey(){ return 'hf_agent_practice_base_' + (c && c.id); }
+function agSaveBase(){
+  try{
+    if(localStorage.getItem(agBaseKey())) return;
+    localStorage.setItem(agBaseKey(), JSON.stringify({ menu:c.menu, customers:c.customers, suppliers:c.suppliers, expenseHeads:c.expenseHeads }));
+  }catch(e){}
+}
+function agOldPracticeData(){
+  const D = today();
+  return (c.journal||[]).some(j => j.at && dayOf(j.at) < D)
+      || (c.orders||[]).some(o => o.at && dayOf(o.at) < D)
+      || (c.closedDays||[]).some(d => d.date < D);
+}
+async function agPracticeCheck(){
+  if(!c || !agIsPractice()) return;
+  agSaveBase();
+  if(agOldPracticeData()) await agPracticeWipe('naya din');
+}
+async function agPracticeWipe(why){
+  // 1. phone
+  AG_TX.forEach(k => { if(Array.isArray(c[k])) c[k] = []; });
+  c.closedDays = []; c.cashOverride = {}; c.openingPosted = false; delete c.openingCash;
+  try{
+    const base = JSON.parse(localStorage.getItem(agBaseKey()) || 'null');
+    if(base){ ['menu','customers','suppliers','expenseHeads'].forEach(k => { if(Array.isArray(base[k])) c[k] = base[k]; }); }
+  }catch(e){}
+  // 2. cloud ki qatar — is client ka atka hua kaam wapas na chaRhe
+  if(typeof OUTBOX !== 'undefined'){
+    for(let i = OUTBOX.length - 1; i >= 0; i--) if(OUTBOX[i].clientId === c.id) OUTBOX.splice(i, 1);
+    saveOutbox();
+  }
+  try{ localStorage.setItem(KEY, JSON.stringify(c)); }catch(e){}
+  // 3. cloud — entries mitao, blob seedha likho (merge nahi, warna purane band din wapas aa jate)
+  let cloudOk = false;
+  try{
+    const del = await sb.from('hf_entries').delete().eq('client_id', c.id);
+    if(del.error) throw new Error(del.error.message);
+    for(let i = 0; i < 3 && !cloudOk; i++){
+      const cur = await DB.readBlob(c.id);
+      const next = Object.assign({}, cur.data || {}, blobOf(c), { closedDays:[], cashOverride:{}, openingPosted:false });
+      delete next.openingCash;
+      const r = await DB.writeBlobIfRev(c.id, next, cur.rev);
+      if(r.ok){ c.rev = r.rev; cloudOk = true; }
+    }
+  }catch(e){ console.error('practice wipe:', e.message); }
+  toast(cloudOk ? 'Mashq account: ' + why + ' — pichhla data saaf' : 'Phone saaf hua, cloud abhi nahi — net aane par dobara khulega');
+  if(screen === 'dash') drawDash();
+  if(screen === 'agent'){ $('ag-chat').innerHTML = ''; drawAgent(); }
+  return cloudOk;
+}
+
 /* ---- Screen ---- */
 function drawAgent(){
   agWatchRun();
   const v = $('ag-ver'); if(v) v.textContent = 'version ' + AG_VER.slice(-1);
-  if(!$('ag-chat').children.length)
-    agMsg('Assalam o Alaikum. Bataiye kya hua — likh kar ya 🎤 dabakar. Misaal: <i>"Ali bhai ko 1 karahi aur 4 naan udhaar"</i>, <i>"gas ka bill 6000 diya"</i>, <i>"din band karo, galle mein 40000"</i>. Parcha aaye to button dabayein, ya likh dein <i>"haan"</i>.', 'bot');
+  if(!$('ag-chat').children.length && agIsPractice())
+    agMsg('<span class="ag-tag warn">Mashq account</span> Aaj ka sab kuch din band ke baad bhi dekh sakte hain. <b>Kal app kholte hi</b> yeh saara data khud saaf ho jayega — menu aur fehristein shuru wali rahengi.', 'bot');
+  if(!$('ag-chat').querySelector('.ag-hello'))
+    agMsg('Assalam o Alaikum. Bataiye kya hua — likh kar ya 🎤 dabakar. Misaal: <i>"Ali bhai ko 1 karahi aur 4 naan udhaar"</i>, <i>"gas ka bill 6000 diya"</i>, <i>"din band karo, galle mein 40000"</i>. Parcha aaye to button dabayein, ya likh dein <i>"haan"</i>.', 'bot', 'ag-hello');
   clearInterval(AG.timer);
   AG.timer = setInterval(() => { if(screen === 'agent') agWatchRun(); }, 30000);
 }
