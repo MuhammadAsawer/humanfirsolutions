@@ -5863,7 +5863,7 @@ function agPlan(p){
     P.party = name || p.party || '—'; P.total = amt;
     const bal = name ? partyBalance(c, name) : 0;
     P.rows.push(['Abhi udhaar', rs(bal)], ['Wasool', rs(amt)], ['Baad mein baaqi', rs(bal - amt)]);
-    if(!name) P.block = 'Yeh grahak fehrist mein nahi.';
+    if(!name) P.block = 'Yeh grahak fehrist mein nahi. Naya khata kholna ho to likhein: "naya grahak ' + (p.party||'naam') + ', purana udhaar ' + (Number(p.amount)||0) + '".';
     else if(amt > bal + 0.5) P.block = `${name} ka udhaar sirf ${rs(bal)} hai — is se zyada wasooli nahi.`;
     if(!amt) P.block = P.block || 'Raqam samajh nahi aayi.';
     const t = name && agRecent(j => j.account === '1100' && j.party === name && Math.abs((Number(j.cr)||0) - amt) < 1);
@@ -5888,7 +5888,7 @@ function agPlan(p){
     P.party = name || p.party || '—'; P.total = amt;
     const bal = name ? partyBalance(c, name, 'supplier') : 0;
     P.rows.push(['Abhi dena hai', rs(bal)], ['Ada', rs(amt)], ['Baad mein baaqi', rs(bal - amt)]);
-    if(!name) P.block = 'Yeh supplier fehrist mein nahi.';
+    if(!name) P.block = 'Yeh supplier fehrist mein nahi. Naya khata kholna ho to likhein: "naya supplier ' + (p.party||'naam') + ', purana dena ' + (Number(p.amount)||0) + '".';
     else if(amt > bal + 0.5) P.block = `${name} ko sirf ${rs(bal)} dena hai — is se zyada nahi.`;
     if(!amt) P.block = P.block || 'Raqam samajh nahi aayi.';
     const t = name && agRecent(j => j.account === '2000' && j.party === name && Math.abs((Number(j.dr)||0) - amt) < 1);
@@ -5902,6 +5902,41 @@ function agPlan(p){
       queueUp('payments', rec, r.lines);
       save();
       return { label: name + ' ko ' + rs(amt) };
+    };
+  }
+  else if(p.type === 'party'){
+    const kind = p.partyKind === 'supplier' ? 'supplier' : 'customer';
+    const list = kind === 'customer' ? c.customers : c.suppliers;
+    P.title = kind === 'customer' ? 'Naya grahak / purana udhaar' : 'Naya supplier / purana dena';
+    const name = String(p.party || '').trim();
+    const have = agFind(list, name);
+    const exact = list.find(x => agNorm(x.name) === agNorm(name));
+    const amt = Math.round((Number(p.amount)||0) * 100) / 100;
+    P.party = exact ? exact.name : name || '—'; P.total = amt;
+    P.rows.push(['Qism', kind === 'customer' ? 'Grahak (hamein dega)' : 'Supplier (hum ne dena hai)']);
+    P.rows.push(['Khata', exact ? 'Pehle se maujood' : 'Naya khulega']);
+    P.rows.push([kind === 'customer' ? 'Purana udhaar' : 'Purana dena', rs(amt)]);
+    P.rows.push(['Galle par asar', 'Koi nahi (purani raqam hai)']);
+    if(!name) P.block = 'Naam samajh nahi aaya.';
+    else if(!exact && have) P.warn.push(`Milta julta naam pehle se hai: "${have}". Agar wohi hai to "Nahi" dabayein aur poora naam likhein.`);
+    if(exact && amt <= 0) P.block = P.block || `${exact.name} ka khata pehle se maujood hai.`;
+    if(amt < 0) P.block = P.block || 'Raqam theek nahi.';
+    const pname = exact ? exact.name : name;
+    if(amt > 0 && (c.journal||[]).some(j => j.ref === 'OPENING-' + kind + '-' + pname))
+      P.block = P.block || `${pname} ka purana hisaab pehle hi darj ho chuka hai — dobara nahi hota.`;
+    P.run = () => {
+      if(!exact) list.push({ name:pname, phone:String(p.phone||'').trim(), balance:0 });
+      if(amt > 0){
+        const r = addPartyOpeningBalance(c, own, { name:pname, kind, amount:amt });
+        // Journal ki in lines ko apni pehchan do aur cloud ki qatar mein bhejo —
+        // warna dobara login par cloud se taaza data aate hi yeh mit jati hain.
+        (c.journal||[]).filter(j => j.ref === r.ref).forEach((j, n) => {
+          if(!j.id) j.id = r.ref + '-J' + n;
+          if(typeof queueRecord === 'function') queueRecord(c.id, 'journal', j);
+        });
+      }
+      save();
+      return { label: pname + (amt > 0 ? ' — purana ' + rs(amt) : ' — khata khul gaya') };
     };
   }
   if(P.dup) P.warn.unshift(P.dup + ' Do baar to nahi likh rahe?');
@@ -5928,12 +5963,13 @@ async function agSend(textIn){
   wait.remove(); AG.busy = false;
 
   if(p.type === 'closing'){ agClosing(p.amount != null ? Number(p.amount) : null); return; }
-  if(p.type === 'unknown' || !['sale','purchase','expense','receipt','payment'].includes(p.type)){
+  if(p.type === 'unknown' || !['sale','purchase','expense','receipt','payment','party'].includes(p.type)){
     agMsg(agEsc(p.explain || 'Samajh nahi aaya.') + (p.questions && p.questions.length ? '<br>' + agEsc(p.questions.join(' · ')) : ''), 'bot');
     return;
   }
   const P = agPlan(p);
-  let h = `<b>Parcha · ${agEsc(P.title)}</b><div>${agEsc(p.explain||'')}</div><table>`;
+  const samjha = String(p.explain||'').replace(/(darj|save|record)\s*(kar|ho)\s*(diya|liya|gaya|gayi|chuka|chuki)[^.]*/gi, 'darj karna hai');
+  let h = `<b>Parcha · ${agEsc(P.title)}</b><div class="hint">Agent ne samjha: ${agEsc(samjha)}</div><table>`;
   h += `<tr><td>Naam</td><td><b>${agEsc(P.party)}</b></td></tr>`;
   P.rows.forEach(r => h += `<tr><td>${agEsc(r[0])}</td><td>${agEsc(r[1])}</td></tr>`);
   h += `<tr><td>Kul</td><td><b>${rs(P.total)}</b></td></tr></table>`;
