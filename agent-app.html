@@ -535,7 +535,7 @@ input:focus,select:focus{outline:2px solid var(--brass);outline-offset:1px}
   <div class="top">
     <div><button class="back" onclick="go('dash')">‹ Wapas</button>
       <h1 class="brand" style="font-size:18px">ایجنٹ</h1></div>
-    <div class="day"><b id="ag-status" class="ag-status ok">Chowkidar</b><span>har 30 second</span></div>
+    <div class="day"><b id="ag-status" class="ag-status ok">Chowkidar</b><span id="ag-ver">har 30 second</span></div>
   </div>
   <details class="ag-watchbox"><summary>Chowkidar ki jaanch</summary><div id="ag-watch"></div></details>
   <div id="ag-chat"></div>
@@ -5694,7 +5694,8 @@ function applySetupPacket(client, packet){
    - Gemini key Supabase secret mein; phone mein nahi (edge function hf-agent).
    - Chowkidar har entry ke baad aur har 30 second poore khaate ko jaanchta hai.
    ========================================================================= */
-const AG = { hist: [], busy: false, watch: [], timer: null };
+const AG = { hist: [], busy: false, watch: [], timer: null, pending: null };
+const AG_VER = 'AGENT-2026-11-04-c';
 const AG_WINDOW = 10 * 60 * 1000;   // dohri entry: 10 minute
 
 function agNorm(s){ return String(s||'').toLowerCase().replace(/[^a-z0-9؀-ۿ]/g,''); }
@@ -5954,7 +5955,20 @@ function agMsg(html, who, cls){
 async function agSend(textIn){
   const inp = $('ag-in');
   const text = String(textIn ?? inp.value).trim(); if(!text || AG.busy) return;
-  inp.value = ''; AG.busy = true;
+  inp.value = '';
+  // Chat mein "haan / ji / darj karo" likha aur koi parcha khula hai → wahi button, AI ko dobara nahi bhejna
+  const yesWords = /^(haan|han|ha|haa|ji|jee|g|ok|okay|theek|thik|sahi|bilkul|darj|yes)\b/i;
+  const noWords  = /^(nahi|nai|na|no|mat|cancel|chhoro|chhor do)\b/i;
+  if(AG.pending && text.length <= 40 && (yesWords.test(text) || noWords.test(text))){
+    agMsg(agEsc(text), 'me');
+    const pd = AG.pending;
+    if(noWords.test(text)) pd.no.click();
+    else if(pd.yes.disabled) agMsg('<span class="ag-tag bad">Ruka</span> Yeh parcha darj nahi ho sakta — upar laal wajah dekhein.', 'bot');
+    else if(pd.dup && !/phir bhi/i.test(text)) agMsg('<span class="ag-tag warn">Dhyan</span> Yeh dohri lag rahi hai. Pakka darj karni hai to laal button dabayein ya likhein "phir bhi darj karo".', 'bot');
+    else pd.yes.click();
+    return;
+  }
+  AG.busy = true;
   agMsg(agEsc(text), 'me');
   const wait = agMsg('…soch raha hoon', 'bot');
   let p;
@@ -5967,6 +5981,7 @@ async function agSend(textIn){
     agMsg(agEsc(p.explain || 'Samajh nahi aaya.') + (p.questions && p.questions.length ? '<br>' + agEsc(p.questions.join(' · ')) : ''), 'bot');
     return;
   }
+  if(AG.pending){ try{ AG.pending.no.click(); }catch(e){} }
   const P = agPlan(p);
   const samjha = String(p.explain||'').replace(/(darj|save|record)\s*(kar|ho)\s*(diya|liya|gaya|gayi|chuka|chuki)[^.]*/gi, 'darj karna hai');
   let h = `<b>Parcha · ${agEsc(P.title)}</b><div class="hint">Agent ne samjha: ${agEsc(samjha)}</div><table>`;
@@ -5982,7 +5997,9 @@ async function agSend(textIn){
   yes.textContent = P.dup ? 'Phir bhi darj karo' : 'Haan, darj karo'; yes.disabled = !!P.block;
   const no = document.createElement('button'); no.textContent = 'Nahi';
   row.append(yes, no); card.appendChild(row);
+  AG.pending = { yes, no, dup: !!P.dup };
   yes.onclick = () => {
+    AG.pending = null;
     try{
       const r = P.run();
       row.innerHTML = '<span class="ag-tag ok">Darj ho gaya</span> ' + agEsc(r.label) +
@@ -5990,7 +6007,7 @@ async function agSend(textIn){
       agWatchRun();
     }catch(e){ row.innerHTML = '<span class="ag-tag bad">Nahi hua</span> ' + agEsc(e.message); }
   };
-  no.onclick = () => { row.innerHTML = '<span class="ag-tag warn">Chhor diya</span>'; };
+  no.onclick = () => { AG.pending = null; row.innerHTML = '<span class="ag-tag warn">Chhor diya</span>'; };
 }
 
 /* ---- Chowkidar ---- */
@@ -6071,8 +6088,9 @@ function agClosing(counted){
 /* ---- Screen ---- */
 function drawAgent(){
   agWatchRun();
+  const v = $('ag-ver'); if(v) v.textContent = 'version ' + AG_VER.slice(-1);
   if(!$('ag-chat').children.length)
-    agMsg('Assalam o Alaikum. Bataiye kya hua — likh kar ya 🎤 dabakar. Misaal: <i>"Ali bhai ko 1 karahi aur 4 naan udhaar"</i>, <i>"gas ka bill 6000 diya"</i>, <i>"din band karo, galle mein 40000"</i>.', 'bot');
+    agMsg('Assalam o Alaikum. Bataiye kya hua — likh kar ya 🎤 dabakar. Misaal: <i>"Ali bhai ko 1 karahi aur 4 naan udhaar"</i>, <i>"gas ka bill 6000 diya"</i>, <i>"din band karo, galle mein 40000"</i>. Parcha aaye to button dabayein, ya likh dein <i>"haan"</i>.', 'bot');
   clearInterval(AG.timer);
   AG.timer = setInterval(() => { if(screen === 'agent') agWatchRun(); }, 30000);
 }
